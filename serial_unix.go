@@ -23,6 +23,8 @@ import (
 type unixPort struct {
 	handle int
 
+	oldSettings *unix.Termios
+
 	readTimeout time.Duration
 	closeLock   sync.RWMutex
 	closeSignal *unixutils.Pipe
@@ -33,6 +35,8 @@ func (port *unixPort) Close() error {
 	if !atomic.CompareAndSwapUint32(&port.opened, 1, 0) {
 		return nil
 	}
+
+	port.setTermSettings(port.oldSettings)
 
 	// Close port
 	port.releaseExclusiveAccess()
@@ -227,6 +231,13 @@ func nativeOpen(portName string, mode *Mode) (*unixPort, error) {
 		opened:      1,
 		readTimeout: NoTimeout,
 	}
+
+	oldSettings, err := port.getTermSettings()
+	if err != nil {
+		port.Close()
+		return nil, &PortError{code: InvalidSerialPort}
+	}
+	port.oldSettings = oldSettings
 
 	// Setup serial port
 	settings, err := port.getTermSettings()
