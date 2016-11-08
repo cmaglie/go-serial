@@ -22,11 +22,15 @@ import (
 type unixPort struct {
 	handle int
 
+	oldSettings *syscall.Termios
+
 	closeLock   sync.RWMutex
 	closeSignal *pipe
 }
 
 func (port *unixPort) Close() error {
+	port.setTermSettings(port.oldSettings)
+
 	// Close port
 	port.releaseExclusiveAccess()
 	if err := syscall.Close(port.handle); err != nil {
@@ -108,6 +112,13 @@ func nativeOpen(portName string, mode *Mode) (*unixPort, error) {
 	port := &unixPort{
 		handle: h,
 	}
+
+	oldSettings, err := port.getTermSettings()
+	if err != nil {
+		port.Close()
+		return nil, &PortError{code: InvalidSerialPort}
+	}
+	port.oldSettings = oldSettings
 
 	// Setup serial port
 	if port.SetMode(mode) != nil {
