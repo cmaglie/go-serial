@@ -17,9 +17,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func timeout(t *testing.T, timeout time.Duration) {
+func startTest(t *testing.T, timeout time.Duration, probe *Probe) {
 	go func() {
 		time.Sleep(timeout)
+		probe.TurnOffTarget()
+		probe.Close()
 		require.FailNow(t, "Test timed-out")
 	}()
 	log.Printf("Starting test (timeout %s)", timeout)
@@ -42,7 +44,7 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 	target := probe.ConnectToTarget(t)
 	defer target.Close()
 
-	timeout(t, 10*time.Second)
+	startTest(t, 10*time.Second, probe)
 
 	// Try to send while a receive is waiting for data
 
@@ -88,7 +90,7 @@ func TestDisconnectingPortDetection(t *testing.T) {
 	target := probe.ConnectToTarget(t)
 	defer target.Close()
 
-	timeout(t, 10*time.Second)
+	startTest(t, 10*time.Second, probe)
 
 	// Disconnect target after a small delay
 	go func() {
