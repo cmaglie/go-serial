@@ -7,7 +7,8 @@
 //
 // This firmware is part of the testsuite of http://go.bug.st/go-serial project.
 //
-// The Target board right now just do nothing.
+// The Target board can perform various test based on the first character read:
+// - 'E': perform echo test.
 // TODO: tests will be added as needed.
 
 void setup() {
@@ -16,7 +17,17 @@ void setup() {
 
 void loop() {
   int c = Serial.read();
+  if (c == 'E')
+    echoTest();
   if (c == -1)
     return;
 }
 
+void echoTest() {
+  while (true) {
+    int c = Serial.read();
+    if (c == -1)
+      continue;
+    Serial.print((char) c);
+  }
+}
