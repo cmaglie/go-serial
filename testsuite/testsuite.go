@@ -48,6 +48,9 @@ func (_ *Probe) ConnectToTarget(t *testing.T) serial.Port {
 		}
 		port, err := serial.Open(portName, &serial.Mode{})
 		require.NoError(t, err, "Could not connect to target")
+		if err != nil {
+			break
+		}
 		return port
 	}
 	assert.FailNow(t, "Target not found")
