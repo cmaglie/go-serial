@@ -115,3 +115,54 @@ func TestDisconnectingPortDetection(t *testing.T) {
 	require.True(t, ok, "Unexpected error during read: %s", err.Error())
 	require.Equal(t, serial.PortClosed, portError.Code(), "Unexpected error during read: %s", err.Error())
 }
+
+func TestFlushRXSerialBuffer(t *testing.T) {
+	probe := connectToProbe(t)
+	defer probe.Close()
+
+	probe.TurnOnTarget()
+	target := probe.ConnectToTarget(t)
+	defer target.Close()
+
+	startTest(t, time.Second, probe)
+
+	// Send a bunch of data to the Target
+	log.Printf("T1 - Starting echo test and sending 'HELLO!' to the target")
+	n, err := target.Write([]byte("EHELLO!")) // 'E' starts echo test, 'HELLO!' should be repeated
+	require.NoError(t, err, "Error sending data to be echoed")
+	require.Equal(t, 7, n, "Write sent a wrong number of bytes")
+
+	// Wait a bit to receive data back
+	log.Printf("T1 - Waiting a bit to receive data back")
+	time.Sleep(100 * time.Millisecond)
+
+	// Read the first echoed char
+	log.Printf("T1 - Reading the first echoed char (should be 'H')")
+	buff := make([]byte, 1)
+	n, err = target.Read(buff)
+	require.NoError(t, err, "Error reading echoed data")
+	require.Equal(t, 1, n, "Read received less bytes than expected")
+	require.Equal(t, byte('H'), buff[0], "Incorrect data received")
+
+	// Flush buffers
+	log.Printf("T1 - Flushing read buffer...")
+	err = target.ResetInputBuffer()
+	require.NoError(t, err, "Error flushing rx buffer")
+
+	// Send other data
+	log.Printf("T1 - Sending 'X' to target")
+	n, err = target.Write([]byte("X"))
+	require.NoError(t, err, "Error sending data to be echoed")
+	require.Equal(t, 1, n, "Write sent a wrong number of bytes")
+
+	// Wait a bit to receive data back
+	log.Printf("T1 - Waiting a bit to receive data back")
+	time.Sleep(100 * time.Millisecond)
+
+	// Read the first echoed char
+	log.Printf("T1 - Reading the first echoed char (should be 'X', and 'ELLO!' should be discarded)")
+	n, err = target.Read(buff)
+	require.NoError(t, err, "Error reading echoed data")
+	require.Equal(t, 1, n, "Read received less bytes than expected")
+	require.Equal(t, byte('X'), buff[0], "Incorrect data received")
+}
