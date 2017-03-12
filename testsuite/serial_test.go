@@ -17,14 +17,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func startTest(t *testing.T, timeout time.Duration, probe *Probe) {
+type Test struct {
+	end   chan bool
+	ended chan bool
+}
+
+func startTest(t *testing.T, timeout time.Duration, probe *Probe) *Test {
+	test := &Test{}
+	test.end = make(chan bool)
+	test.ended = make(chan bool)
 	go func() {
-		time.Sleep(timeout)
+		select {
+		case <-test.end:
+			// Test ended before timeout
+			log.Printf("Test ended before timeout")
+		case <-time.After(timeout):
+			require.Fail(t, "Test timed-out")
+		}
 		probe.TurnOffTarget()
 		probe.Close()
-		require.FailNow(t, "Test timed-out")
+		test.ended <- true
 	}()
 	log.Printf("Starting test (timeout %s)", timeout)
+	return test
+}
+
+func (test *Test) Completed() {
+	test.end <- true
+	<-test.ended
 }
 
 func errString(err error) string {
@@ -44,11 +64,12 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 	target := probe.ConnectToTarget(t)
 	defer target.Close()
 
-	startTest(t, 10*time.Second, probe)
+	test := startTest(t, 10*time.Second, probe)
 
 	// Try to send while a receive is waiting for data
 
 	// Make a blocking Recv call
+	done := make(chan bool)
 	go func() {
 		log.Printf("T1 - Waiting on Read()")
 		buff := make([]byte, 1024)
@@ -63,6 +84,8 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 		portError, ok := err.(*serial.PortError)
 		require.True(t, ok, "Unexpected error during read: %s", err.Error())
 		require.Equal(t, serial.PortClosed, portError.Code(), "Unexpected error during read: %s", err.Error())
+
+		done <- true
 	}()
 
 	// Try to send a byte each `delay` milliseconds and check if the
@@ -80,6 +103,11 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 	elapsed := time.Since(start)
 	log.Printf("T2 - Done sending. elapsed/expected=%s/%s", elapsed, expected)
 	require.InDelta(t, expected.Seconds(), elapsed.Seconds(), epsilon.Seconds())
+
+	// Wait for goroutines completion and cleanup
+	target.Close()
+	<-done
+	test.Completed()
 }
 
 func TestDisconnectingPortDetection(t *testing.T) {
@@ -90,14 +118,17 @@ func TestDisconnectingPortDetection(t *testing.T) {
 	target := probe.ConnectToTarget(t)
 	defer target.Close()
 
-	startTest(t, 10*time.Second, probe)
+	test := startTest(t, 10*time.Second, probe)
 
 	// Disconnect target after a small delay
+	done := make(chan bool)
 	go func() {
-		log.Printf("T1 - Delay 500ms before disconnecting target")
-		time.Sleep(500 * time.Millisecond)
+		log.Printf("T1 - Delay 200ms before disconnecting target")
+		time.Sleep(200 * time.Millisecond)
 		log.Printf("T1 - Disconnect target")
 		probe.TurnOffTarget()
+
+		done <- true
 	}()
 
 	// Do a blocking Read that should return after the target disconnection
@@ -106,14 +137,13 @@ func TestDisconnectingPortDetection(t *testing.T) {
 	n, err := target.Read(buff)
 	log.Printf("T2 - Read returned: n=%d err=%s", n, errString(err))
 
-	log.Printf("T2 - Make another Read call")
-	n, err = target.Read(buff)
-	log.Printf("T2 - Read returned: n=%d err=%s", n, errString(err))
-	require.NotNil(t, err, "Read did not block")
+	require.Error(t, err, "Read returned no errors")
+	require.Equal(t, 0, n, "Read has returned some bytes")
 
-	portError, ok := err.(*serial.PortError)
-	require.True(t, ok, "Unexpected error during read: %s", err.Error())
-	require.Equal(t, serial.PortClosed, portError.Code(), "Unexpected error during read: %s", err.Error())
+	// Wait for goroutines completion and cleanup
+	target.Close()
+	<-done
+	test.Completed()
 }
 
 func TestFlushRXSerialBuffer(t *testing.T) {
@@ -124,7 +154,7 @@ func TestFlushRXSerialBuffer(t *testing.T) {
 	target := probe.ConnectToTarget(t)
 	defer target.Close()
 
-	startTest(t, time.Second, probe)
+	test := startTest(t, time.Second, probe)
 
 	// Send a bunch of data to the Target
 	log.Printf("T1 - Starting echo test and sending 'HELLO!' to the target")
@@ -165,4 +195,8 @@ func TestFlushRXSerialBuffer(t *testing.T) {
 	require.NoError(t, err, "Error reading echoed data")
 	require.Equal(t, 1, n, "Read received less bytes than expected")
 	require.Equal(t, byte('X'), buff[0], "Incorrect data received")
+
+	// Cleanup test
+	target.Close()
+	test.Completed()
 }
