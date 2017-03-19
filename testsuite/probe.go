@@ -41,22 +41,20 @@ func ConnectToProbe(t *testing.T) *Probe {
 // ConnectToTarget attempts to connect to the Target board.
 func (probe *Probe) ConnectToTarget(t *testing.T) serial.Port {
 	log.Println("TR - Connecting to Target")
-	for i := 0; i < 10; i++ {
-		portName, err := FindPortWithVIDPID("2341", "8036")
-		require.NoError(t, err, "Could not search for target")
-		if portName == "" {
-			time.Sleep(time.Millisecond * 500)
-			continue
-		}
-		port, err := serial.Open(portName, &serial.Mode{})
-		require.NoError(t, err, "Could not connect to target")
-		if err != nil {
-			break
-		}
-		return port
+
+	portName, err := PollToFindPortWithVIDPID("2341", "8036", 5*time.Second, 500*time.Millisecond)
+	require.NoError(t, err, "Could not search for target")
+	if portName == "" {
+		assert.FailNow(t, "Target not found")
+		return nil // Should never be reached...
 	}
-	assert.FailNow(t, "Target not found")
-	return nil // Should never be reached...
+	port, err := serial.Open(portName, &serial.Mode{})
+	require.NoError(t, err, "Could not connect to target")
+	if err != nil {
+		assert.FailNow(t, "Can't connect to target")
+		return nil // Should never be reached...
+	}
+	return port
 }
 
 // Close terminates the connection to the Probe. The Target
