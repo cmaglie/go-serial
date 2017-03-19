@@ -58,11 +58,8 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 	// https://github.com/bugst/go-serial/issues/15
 
 	probe := ConnectToProbe(t)
-	defer probe.Close()
-
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
-	defer target.Close()
 
 	test := startTest(t, 10*time.Second, probe)
 
@@ -112,11 +109,8 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 
 func TestDisconnectingPortDetection(t *testing.T) {
 	probe := ConnectToProbe(t)
-	defer probe.Close()
-
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
-	defer target.Close()
 
 	test := startTest(t, 10*time.Second, probe)
 
@@ -148,11 +142,8 @@ func TestDisconnectingPortDetection(t *testing.T) {
 
 func TestFlushRXSerialBuffer(t *testing.T) {
 	probe := ConnectToProbe(t)
-	defer probe.Close()
-
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
-	defer target.Close()
 
 	test := startTest(t, time.Second, probe)
 
