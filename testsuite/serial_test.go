@@ -57,7 +57,7 @@ func errString(err error) string {
 func TestConcurrentReadAndWrite(t *testing.T) {
 	// https://github.com/bugst/go-serial/issues/15
 
-	probe := connectToProbe(t)
+	probe := ConnectToProbe(t)
 	defer probe.Close()
 
 	probe.TurnOnTarget()
@@ -111,7 +111,7 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 }
 
 func TestDisconnectingPortDetection(t *testing.T) {
-	probe := connectToProbe(t)
+	probe := ConnectToProbe(t)
 	defer probe.Close()
 
 	probe.TurnOnTarget()
@@ -147,7 +147,7 @@ func TestDisconnectingPortDetection(t *testing.T) {
 }
 
 func TestFlushRXSerialBuffer(t *testing.T) {
-	probe := connectToProbe(t)
+	probe := ConnectToProbe(t)
 	defer probe.Close()
 
 	probe.TurnOnTarget()
