@@ -1,19 +1,19 @@
 //
-// Copyright 2014-2017 Cristian Maglie. All rights reserved.
+// Copyright 2014-2020 Cristian Maglie. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 //
 
-package testsuite // import "go.bug.st/serial.v1/testsuite"
+package testsuite
+
 import (
 	"fmt"
 	"log"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	serial "go.bug.st/serial.v1"
+	"go.bug.st/serial"
 )
 
 // Probe is a board that can perform some actions to a Target
@@ -44,16 +44,9 @@ func (probe *Probe) ConnectToTarget(t *testing.T) serial.Port {
 
 	portName, err := PollToFindPortWithVIDPID("2341", "8036", 5*time.Second, 500*time.Millisecond)
 	require.NoError(t, err, "Could not search for target")
-	if portName == "" {
-		assert.FailNow(t, "Target not found")
-		return nil // Should never be reached...
-	}
+	require.NotEmpty(t, portName, "Target not found")
 	port, err := serial.Open(portName, &serial.Mode{})
 	require.NoError(t, err, "Could not connect to target")
-	if err != nil {
-		assert.FailNow(t, "Can't connect to target")
-		return nil // Should never be reached...
-	}
 	return port
 }
 
