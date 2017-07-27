@@ -42,7 +42,7 @@ func ConnectToProbe(t *testing.T) *Probe {
 func (probe *Probe) ConnectToTarget(t *testing.T) serial.Port {
 	log.Println("TR - Connecting to Target")
 
-	portName, err := PollToFindPortWithVIDPID("2341", "8036", 5*time.Second, 500*time.Millisecond)
+	portName, err := PollToFindPortWithVIDPID("2341", "8036", 15*time.Second, 500*time.Millisecond)
 	require.NoError(t, err, "Could not search for target")
 	require.NotEmpty(t, portName, "Target not found")
 	port, err := serial.Open(portName, &serial.Mode{})
