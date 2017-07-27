@@ -56,6 +56,11 @@ func testTimeoutHandler(test *Test) {
 // but just that the test ended before the timeout and the
 // used resources can be freed.
 func (test *Test) Completed() {
-	test.end <- true
-	<-test.ended
+	select {
+	case <-test.ended:
+		// test already timed out, do nothing
+	default:
+		test.end <- true
+		<-test.ended
+	}
 }
