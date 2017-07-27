@@ -67,7 +67,12 @@ func (probe *Probe) TurnOnTarget() error {
 // TurnOffTarget turns off the Target board.
 func (probe *Probe) TurnOffTarget() error {
 	log.Println("PR - Turn OFF target")
-	return probe.sendCommand('0')
+	err := probe.sendCommand('0')
+	if err != nil {
+		// give some time to the Target to fully disconnect
+		time.Sleep(100 * time.Millisecond)
+	}
+	return err
 }
 
 func (probe *Probe) sendCommand(cmd byte) error {
