@@ -1,8 +1,15 @@
 //
 // Copyright 2014-2017 Lars Knudsen, Cristian Maglie. All rights reserved.
+// See AUTHORS file for the full list of contributors.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 //
+
+// This implementation, that use OLE to obtain USB information, has been
+// replaced by another one based on setupapi.
+
+// This old code is no more maintained and is kept here in "build ignore"
+// just for archive purposes.
 
 // +build ignore
 

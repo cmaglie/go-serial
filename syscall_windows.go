@@ -1,5 +1,6 @@
 //
 // Copyright 2014-2017 Cristian Maglie. All rights reserved.
+// See AUTHORS file for the full list of contributors.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 //
@@ -25,4 +26,3 @@ package serial // import "go.bug.st/serial.v1"
 //sys getOverlappedResult(handle syscall.Handle, overlapEvent *syscall.Overlapped, n *uint32, wait bool) (err error) = GetOverlappedResult
 
 //sys purgeComm(handle syscall.Handle, flags uint32) (err error) = PurgeComm
-

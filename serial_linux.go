@@ -1,5 +1,6 @@
 //
 // Copyright 2014-2017 Cristian Maglie. All rights reserved.
+// See AUTHORS file for the full list of contributors.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 //

@@ -33,3 +33,7 @@ The software is release under a BSD 3-clause license
 
 https://github.com/bugst/go-serial/blob/v1/LICENSE
 
+## Credits
+
+A lot of people helped to make this library see [AUTHORS](https://github.com/bugst/go-serial/blob/v1/AUTHORS) for a complete list.
+
