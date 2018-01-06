@@ -1,16 +1,19 @@
 //
-// Copyright 2014-2017 Cristian Maglie. All rights reserved.
+// Copyright 2014-2020 Cristian Maglie. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 //
 
-package testsuite // import "go.bug.st/serial.v1/testsuite"
+package testsuite
+
 import (
 	"log"
 	"testing"
 	"time"
 
+	"github.com/arduino/go-properties-orderedmap"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Test is a wrapper for a single test of the testsuite.
@@ -25,16 +28,18 @@ type Test struct {
 
 // StartTest begin a test with the specified timeout.
 func StartTest(t *testing.T, timeout time.Duration) (*Test, *Probe) {
+	config, err := properties.Load("testsuite.config")
+	require.NoError(t, err, "Loading testsuite configuration")
+
 	test := &Test{t: t, timeout: timeout}
 	test.end = make(chan bool)
 	test.ended = make(chan bool)
-
-	probe := ConnectToProbe(t)
-	test.probe = probe
+	test.probe = ConnectToProbe(t, config.Get("probe.vid"), config.Get("probe.pid"), config.Get("target.vid"), config.Get("target.pid"))
 
 	go testTimeoutHandler(test)
 	log.Printf("Starting test (timeout %s)", timeout)
-	return test, probe
+
+	return test, test.probe
 }
 
 func testTimeoutHandler(test *Test) {

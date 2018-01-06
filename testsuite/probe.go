@@ -19,15 +19,17 @@ import (
 // Probe is a board that can perform some actions to a Target
 // board that is under testing
 type Probe struct {
-	port serial.Port
+	port      serial.Port
+	targetVid string
+	targetPid string
 }
 
 // ConnectToProbe attempts to connect to a Probe board. The
 // Probe is identified through VID and PID. Default USB ID is
 // 2341:8037.
-func ConnectToProbe(t *testing.T) *Probe {
+func ConnectToProbe(t *testing.T, vid, pid, targetVid, targetPid string) *Probe {
 	log.Println("PR - Connecting to Probe")
-	portName, err := FindPortWithVIDPID("2341", "8037")
+	portName, err := FindPortWithVIDPID(vid, pid)
 	require.NoError(t, err, "Could not search for probe")
 	require.NotEmpty(t, portName, "Probe not found")
 
@@ -35,14 +37,18 @@ func ConnectToProbe(t *testing.T) *Probe {
 	require.NoError(t, err, "Could not connect to probe")
 
 	//time.Sleep(time.Millisecond * 2000)
-	return &Probe{port: port}
+	return &Probe{
+		port:      port,
+		targetVid: targetVid,
+		targetPid: targetPid,
+	}
 }
 
 // ConnectToTarget attempts to connect to the Target board.
 func (probe *Probe) ConnectToTarget(t *testing.T) serial.Port {
 	log.Println("TR - Connecting to Target")
 
-	portName, err := PollToFindPortWithVIDPID("2341", "8036", 15*time.Second, 500*time.Millisecond)
+	portName, err := PollToFindPortWithVIDPID(probe.targetVid, probe.targetPid, 15*time.Second, 500*time.Millisecond)
 	require.NoError(t, err, "Could not search for target")
 	require.NotEmpty(t, portName, "Target not found")
 	port, err := serial.Open(portName, &serial.Mode{})
