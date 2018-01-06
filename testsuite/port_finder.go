@@ -20,7 +20,7 @@ import (
 func PollToFindPortWithVIDPID(vid, pid string, timeout, pollInterval time.Duration) (string, error) {
 	log.Printf("     > Searching for port %s:%s\n", vid, pid)
 	for ; timeout > pollInterval; timeout -= pollInterval {
-		portName, err := FindPortWithVIDPID("2341", "8036")
+		portName, err := FindPortWithVIDPID(vid, pid)
 		if err != nil {
 			return "", err
 		}
