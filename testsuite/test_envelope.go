@@ -51,7 +51,6 @@ func testTimeoutHandler(test *Test) {
 		log.Printf("Test timed-out")
 		assert.Fail(test.t, "Test timed-out")
 	}
-	test.probe.TurnOffTarget()
 	test.probe.Close()
 	test.ended <- true
 }
