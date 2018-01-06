@@ -5,7 +5,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 //
-// This firmware is part of the testsuite of http://go.bug.st/go-serial project.
+// This firmware is part of the testsuite of http://go.bug.st/serial project.
 //
 // The Probe is able to perform some actions on the Target board:
 // - Power on/off to simulate connect/disconnect.
