@@ -76,9 +76,9 @@ func (test *Probe) TurnOnTarget() error {
 func (test *Probe) TurnOffTarget() error {
 	log.Println("PR - Turn OFF target")
 	err := test.sendCommand('0')
-	if err != nil {
+	if err == nil {
 		// give some time to the Target to fully disconnect
-		time.Sleep(100 * time.Millisecond)
+		err = WaitForPortToDisappear(test.targetVid, test.targetPid, 15*time.Second, 500*time.Millisecond)
 	}
 	return err
 }
