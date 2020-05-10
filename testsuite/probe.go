@@ -42,6 +42,11 @@ func NewProbe(t *testing.T, timeout time.Duration) *Probe {
 	require.NotEmpty(t, portName, "Probe not found")
 
 	port, err := serial.Open(portName, &serial.Mode{})
+	if portErr, ok := err.(*serial.PortError); ok && (portErr.Code() == serial.PermissionDenied || portErr.Code() == serial.PortBusy) {
+		log.Println("PR - Port busy... waiting 1 sec and retry")
+		time.Sleep(time.Second)
+		port, err = serial.Open(portName, &serial.Mode{})
+	}
 	require.NoError(t, err, "Could not connect to probe")
 
 	//time.Sleep(time.Millisecond * 2000)
@@ -114,6 +119,11 @@ func (test *Probe) ConnectToTarget(t *testing.T) serial.Port {
 	require.NoError(t, err, "Could not search for target")
 	require.NotEmpty(t, portName, "Target not found")
 	port, err := serial.Open(portName, &serial.Mode{})
+	if portErr, ok := err.(*serial.PortError); ok && (portErr.Code() == serial.PermissionDenied || portErr.Code() == serial.PortBusy) {
+		log.Println("TR - Port busy... waiting 1 sec and retry")
+		time.Sleep(time.Second)
+		port, err = serial.Open(portName, &serial.Mode{})
+	}
 	require.NoError(t, err, "Could not connect to target")
 	return port
 }
