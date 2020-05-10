@@ -77,7 +77,6 @@ func (port *windowsPort) Close() error {
 
 func (port *windowsPort) Read(p []byte) (int, error) {
 	var readed uint32
-	params := &dcb{}
 	ev, err := createOverlappedEvent()
 	if err != nil {
 		return 0, err
@@ -120,6 +119,7 @@ func (port *windowsPort) Read(p []byte) (int, error) {
 		// a serial port is alive in Windows is to check if the SetCommState
 		// function fails.
 
+		params := &dcb{}
 		getCommState(port.handle, params)
 		if err := setCommState(port.handle, params); err != nil {
 			port.Close()
