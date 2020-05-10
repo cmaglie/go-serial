@@ -88,10 +88,8 @@ func (test *Probe) sendCommand(cmd byte) error {
 		return fmt.Errorf("Communication error: %s", err)
 	}
 	buff := make([]byte, 1)
-	if n, err := test.port.Read(buff); err != nil {
+	if _, err := test.port.Read(buff); err != nil {
 		return fmt.Errorf("Communication error: %s", err)
-	} else if n != 1 || buff[0] != cmd {
-		return fmt.Errorf("Communication error")
 	}
 	return nil
 }
