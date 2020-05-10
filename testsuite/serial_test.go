@@ -16,17 +16,21 @@ import (
 )
 
 func TestConcurrentReadAndWrite(t *testing.T) {
-	// https://github.com/bugst/go-serial/issues/15
+	probe := NewProbe(t, 20*time.Second)
+	defer probe.Completed()
 
-	test := NewProbe(t, 20*time.Second)
-	test.TurnOnTarget()
-	target := test.ConnectToTarget(t)
+	probe.TurnOnTarget()
+	target := probe.ConnectToTarget(t)
+	defer target.Close()
 
 	// Try to send while a receive is waiting for data
+	// https://github.com/bugst/go-serial/issues/15
 
 	// Make a blocking Recv call
 	done := make(chan bool)
 	go func() {
+		defer func() { done <- true }()
+
 		log.Printf("T1 - Waiting on Read()")
 		buff := make([]byte, 1024)
 		n, err := target.Read(buff) // blocking read
@@ -40,8 +44,6 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 		portError, ok := err.(*serial.PortError)
 		require.True(t, ok, "Unexpected error during read: %s", err.Error())
 		require.Equal(t, serial.PortClosed, portError.Code(), "Unexpected error during read: %s", err.Error())
-
-		done <- true
 	}()
 
 	// Try to send a byte each `delay` milliseconds and check if the
@@ -59,27 +61,29 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 	elapsed := time.Since(start)
 	log.Printf("T2 - Done sending. elapsed/expected=%s/%s", elapsed, expected)
 	require.InDelta(t, expected.Seconds(), elapsed.Seconds(), epsilon.Seconds())
+	target.Close()
 
 	// Wait for goroutines completion and cleanup
-	target.Close()
 	<-done
-	test.Completed()
 }
 
 func TestDisconnectingPortDetection(t *testing.T) {
-	test := NewProbe(t, 20*time.Second)
-	test.TurnOnTarget()
-	target := test.ConnectToTarget(t)
+	probe := NewProbe(t, 20*time.Second)
+	defer probe.Completed()
+
+	probe.TurnOnTarget()
+	target := probe.ConnectToTarget(t)
+	defer target.Close()
 
 	// Disconnect target after a small delay
 	done := make(chan bool)
 	go func() {
+		defer func() { done <- true }()
+
 		log.Printf("T1 - Delay 200ms before disconnecting target")
 		time.Sleep(200 * time.Millisecond)
 		log.Printf("T1 - Disconnect target")
-		test.TurnOffTarget()
-
-		done <- true
+		probe.TurnOffTarget()
 	}()
 
 	// Do a blocking Read that should return after the target disconnection
@@ -92,16 +96,15 @@ func TestDisconnectingPortDetection(t *testing.T) {
 	require.Equal(t, 0, n, "Read has returned some bytes")
 
 	// Wait for goroutines completion and cleanup
-	target.Close()
 	<-done
-	test.Completed()
 }
 
 func TestFlushRXSerialBuffer(t *testing.T) {
-	test := NewProbe(t, 20*time.Second)
-	defer test.Completed()
-	test.TurnOnTarget()
-	target := test.ConnectToTarget(t)
+	probe := NewProbe(t, 20*time.Second)
+	defer probe.Completed()
+
+	probe.TurnOnTarget()
+	target := probe.ConnectToTarget(t)
 	defer target.Close()
 
 	// Send a bunch of data to the Target
