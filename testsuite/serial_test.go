@@ -17,7 +17,10 @@ import (
 
 func TestConcurrentReadAndWrite(t *testing.T) {
 	probe := NewProbe(t, 20*time.Second)
-	defer probe.Completed()
+	defer func() {
+		log.Print("T1 - Completed")
+		probe.Completed()
+	}()
 
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
@@ -29,12 +32,15 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 	// Make a blocking Recv call
 	done := make(chan bool)
 	go func() {
-		defer func() { done <- true }()
+		defer func() {
+			log.Print("T2 - Completed")
+			done <- true
+		}()
 
-		log.Printf("T1 - Waiting on Read()")
+		log.Print("T2 - Waiting on Read()")
 		buff := make([]byte, 1024)
 		n, err := target.Read(buff) // blocking read
-		log.Printf("T1 - Returned from read. n=%d err=%s", n, err.Error())
+		log.Printf("T2 - Returned from read. n=%d err=%v", n, err)
 
 		// if there are no errors then the Read call completed successfully
 		// and did not block
@@ -55,11 +61,11 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 	start := time.Now()
 	for i := 0; i < 5; i++ {
 		time.Sleep(delay)
-		log.Printf("T2 - Sending 1 byte...")
+		log.Printf("T1 - Sending 1 byte...")
 		target.Write([]byte{' '})
 	}
 	elapsed := time.Since(start)
-	log.Printf("T2 - Done sending. elapsed/expected=%s/%s", elapsed, expected)
+	log.Printf("T1 - Done sending. elapsed/expected=%s/%s", elapsed, expected)
 	require.InDelta(t, expected.Seconds(), elapsed.Seconds(), epsilon.Seconds())
 	target.Close()
 
@@ -69,7 +75,10 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 
 func TestDisconnectingPortDetection(t *testing.T) {
 	probe := NewProbe(t, 20*time.Second)
-	defer probe.Completed()
+	defer func() {
+		log.Print("T1 - Completed")
+		probe.Completed()
+	}()
 
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
@@ -78,20 +87,23 @@ func TestDisconnectingPortDetection(t *testing.T) {
 	// Disconnect target after a small delay
 	done := make(chan bool)
 	go func() {
-		defer func() { done <- true }()
+		defer func() {
+			log.Print("T2 - Completed")
+			done <- true
+		}()
 
-		log.Printf("T1 - Delay 200ms before disconnecting target")
+		log.Printf("T2 - Delay 200ms before disconnecting target")
 		time.Sleep(200 * time.Millisecond)
-		log.Printf("T1 - Disconnect target")
+		log.Printf("T2 - Disconnect target")
 		probe.TurnOffTarget()
 	}()
 
 	// Do a blocking Read that should return after the target disconnection
-	log.Printf("T2 - Make a Read call")
+	log.Printf("T1 - Make a Read call")
 	buff := make([]byte, 1024)
 	n, err := target.Read(buff)
-	log.Printf("T2 - Read returned: n=%d err=%v", n, err)
 
+	log.Printf("T1 - Read returned: n=%d err=%v", n, err)
 	require.Error(t, err, "Read returned no errors")
 	require.Equal(t, 0, n, "Read has returned some bytes")
 
@@ -101,7 +113,10 @@ func TestDisconnectingPortDetection(t *testing.T) {
 
 func TestFlushRXSerialBuffer(t *testing.T) {
 	probe := NewProbe(t, 20*time.Second)
-	defer probe.Completed()
+	defer func() {
+		log.Print("T1 - Completed")
+		probe.Completed()
+	}()
 
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
