@@ -7,6 +7,7 @@
 package testsuite
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -25,11 +26,28 @@ func PollToFindPortWithVIDPID(vid, pid string, timeout, pollInterval time.Durati
 			return "", err
 		}
 		if portName != "" {
+			log.Printf("       Detected port '%s'\n", portName)
 			return portName, nil
 		}
 		time.Sleep(pollInterval)
 	}
 	return "", nil
+}
+
+// WaitForPortToDisappear waits until a port is delisted from the operating system
+func WaitForPortToDisappear(vid, pid string, timeout, pollInterval time.Duration) error {
+	log.Printf("     > Waiting for port %s:%s to be deinitialized\n", vid, pid)
+	for ; timeout > pollInterval; timeout -= pollInterval {
+		portName, err := FindPortWithVIDPID(vid, pid)
+		if err != nil {
+			return err
+		}
+		if portName == "" {
+			return nil
+		}
+		time.Sleep(pollInterval)
+	}
+	return fmt.Errorf("port is still present")
 }
 
 // FindPortWithVIDPID attempts to retrieve the port with the
@@ -43,7 +61,6 @@ func FindPortWithVIDPID(vid, pid string) (string, error) {
 	for _, port := range ports {
 		if port.IsUSB {
 			if port.VID == vid && port.PID == pid {
-				log.Printf("       Detected port '%s' %s:%s\n", port.Name, port.VID, port.PID)
 				return port.Name, nil
 			}
 		}
