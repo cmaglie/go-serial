@@ -53,7 +53,7 @@ func NewProbe(t *testing.T, timeout time.Duration) *Probe {
 	test := &Probe{
 		t:         t,
 		timeout:   timeout,
-		end:       make(chan bool),
+		end:       make(chan bool, 1),
 		ended:     make(chan bool),
 		port:      port,
 		targetVid: config.Get("target.vid"),
@@ -61,24 +61,9 @@ func NewProbe(t *testing.T, timeout time.Duration) *Probe {
 	}
 
 	go test.testTimeoutHandler()
-	log.Printf("Starting test (timeout %s)", timeout)
+	log.Printf("   - Test will timeout in %s", timeout)
 
 	return test
-}
-
-func (test *Probe) testTimeoutHandler() {
-	select {
-	case <-test.end:
-		// Test ended before timeout
-		log.Printf("Test ended before timeout")
-	case <-time.After(test.timeout):
-		log.Printf("Test timed-out")
-		assert.Fail(test.t, "Test timed-out")
-	}
-	test.TurnOffTarget()
-	log.Println("PR - Disconnecting Probe")
-	test.port.Close()
-	test.ended <- true
 }
 
 // TurnOnTarget turns on the Target board.
@@ -128,17 +113,30 @@ func (test *Probe) ConnectToTarget(t *testing.T) serial.Port {
 	return port
 }
 
+func (test *Probe) testTimeoutHandler() {
+	select {
+	case <-test.end:
+		// Test ended before timeout
+		log.Printf("   - Test completed normally")
+		test.TurnOffTarget()
+
+	case <-time.After(test.timeout):
+		log.Printf("   ! Test timed-out")
+		assert.Fail(test.t, "Test timed-out")
+		test.TurnOffTarget()
+		<-test.end
+	}
+	log.Println("PR - Disconnecting Probe")
+	test.port.Close()
+	test.ended <- true
+}
+
 // Completed must be called when the test ends before the
 // timeout. This doesn't mean that the test is successful
 // but just that the test ended before the timeout and the
 // used resources can be freed.
 func (test *Probe) Completed() {
-	select {
-	case <-test.ended:
-		// test already timed out, do nothing
-	default:
-		test.end <- true
-		<-test.ended
-	}
+	test.end <- true
+	<-test.ended
 	log.Println("Test ended")
 }
