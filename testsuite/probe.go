@@ -32,6 +32,7 @@ type Probe struct {
 
 // NewProbe begin a test with the specified timeout.
 func NewProbe(t *testing.T, timeout time.Duration) *Probe {
+	log.Println("Starting test using probe")
 	config, err := properties.Load("testsuite.config")
 	require.NoError(t, err, "Loading testsuite configuration")
 
@@ -129,4 +130,5 @@ func (test *Probe) Completed() {
 		test.end <- true
 		<-test.ended
 	}
+	log.Println("Test ended")
 }
