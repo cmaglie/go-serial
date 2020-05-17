@@ -235,3 +235,71 @@ func parseTargetSerialStatus(buff []byte) (bps int, dtr, rts bool, err error) {
 	rts = (fields[3][0] == '1')
 	return
 }
+
+func TestReadTimeout(t *testing.T) {
+	probe := NewProbe(t, 20*time.Second)
+	defer func() {
+		log.Print("T1 - Completed")
+		probe.Completed()
+	}()
+
+	probe.TurnOnTarget()
+	target := probe.ConnectToTarget(t)
+	defer target.Close()
+
+	// Disconnect target after a small delay
+	done := make(chan bool)
+	go func() {
+		defer func() {
+			log.Print("T2 - Completed")
+			done <- true
+		}()
+
+		log.Printf("T2 - Delay 5000ms before disconnecting target")
+		time.Sleep(5000 * time.Millisecond)
+		log.Printf("T2 - Disconnect target")
+		probe.TurnOffTarget()
+	}()
+
+	// Set timeout to 2500 ms
+	timeout := 2500 * time.Millisecond
+	log.Printf("T1 - Set read timeout to 2500ms")
+	err := target.SetReadTimeout(timeout)
+	require.NoError(t, err)
+
+	// Test Read with timeout (it should return after the timeout)
+	buff := make([]byte, 1024)
+	log.Printf("T1 - Make a Read call")
+	start := time.Now()
+	n, err := target.Read(buff)
+	elapsed := time.Now().Sub(start)
+	log.Printf("T1 - Read returned: n=%d err=%v after %v", n, err, elapsed)
+	require.NoError(t, err, "read error")
+	require.Equal(t, 0, n, "bytes read")
+	require.InDelta(t, float64(timeout), float64(elapsed), float64(timeout)*0.01) // Check timeout is within 1%
+
+	// Send data
+	log.Printf("T1 - Sending 'X' to target")
+	n, err = target.Write([]byte("EX")) // 'E' starts echo test, 'X' should be repeated
+	require.NoError(t, err, "Error sending data to be echoed")
+	require.Equal(t, 2, n, "Write sent a wrong number of bytes")
+
+	// Test Read with timeout (it should return data before the timeout)
+	log.Printf("T1 - Reading the echoed char (should be 'X')")
+	start = time.Now()
+	n, err = target.Read(buff)
+	elapsed = time.Now().Sub(start)
+	log.Printf("T1 - Read returned: n=%d err=%v after %v", n, err, elapsed)
+	require.NoError(t, err, "Error reading echoed data")
+	require.Equal(t, 1, n, "Read received less bytes than expected")
+	require.Equal(t, byte('X'), buff[0], "Incorrect data received")
+	require.Less(t, float64(elapsed), float64(10*time.Millisecond)) // Data should be immediately available
+
+	// Test Read with timeout (it should return after port disconnection)
+	err = target.SetReadTimeout(time.Minute)
+	require.NoError(t, err)
+	n, err = target.Read(buff)
+	log.Printf("T1 - Read returned: n=%d err=%v", n, err)
+	require.Error(t, err, "Read returned no errors")
+	require.Equal(t, 0, n, "Read has returned some bytes")
+}
