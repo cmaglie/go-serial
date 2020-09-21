@@ -10,8 +10,7 @@
 // The Target board can perform various test based on the first character read:
 // - 'E': perform echo test.
 // - 'M': perform USB-CDC configuration report test.
-//        Every change to set speed via USB-CDC is reported as well as DTR and RTS bit.
-// TODO: tests will be added as needed.
+//
 
 void setup() {
   Serial.begin(9600);
@@ -37,17 +36,14 @@ void echoTest() {
 }
 
 void modemBitsTest() {
-  while (true) {
-    bool dtr = Serial.dtr();
-    bool rts = Serial.rts();
-    unsigned long baud = Serial.baud();
-    Serial.print("BPS=");
-    Serial.print(baud);
-    Serial.print(" DTR=");
-    Serial.print(dtr ? '1' : '0');
-    Serial.print(" RTS=");
-    Serial.println(rts ? '1' : '0');
-    delay(250);
-  }
+  bool dtr = Serial.dtr();
+  bool rts = Serial.rts();
+  unsigned long baud = Serial.baud();
+  Serial.print("BPS=");
+  Serial.print(baud);
+  Serial.print(" DTR=");
+  Serial.print(dtr ? '1' : '0');
+  Serial.print(" RTS=");
+  Serial.println(rts ? '1' : '0');
 }
 
