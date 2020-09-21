@@ -7,7 +7,11 @@
 package testsuite
 
 import (
+	"errors"
 	"log"
+	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -161,4 +165,71 @@ func TestFlushRXSerialBuffer(t *testing.T) {
 	require.NoError(t, err, "Error reading echoed data")
 	require.Equal(t, 1, n, "Read received less bytes than expected")
 	require.Equal(t, byte('X'), buff[0], "Incorrect data received")
+}
+
+func TestModemBitsAndPortSpeedChange(t *testing.T) {
+	probe := NewProbe(t, 20*time.Second)
+	defer func() {
+		log.Print("T1 - Completed")
+		probe.Completed()
+	}()
+
+	probe.TurnOnTarget()
+	target := probe.ConnectToTarget(t)
+	defer target.Close()
+
+	// Modem bit test
+	assertTargetSerialStatus := func(exBps int, exDtr, exRts bool) {
+		log.Printf("T1 - Acquire port config from target")
+		n, err := target.Write([]byte("M")) // 'M' ask the target to report modem bit status and serial speed
+		require.NoError(t, err, "sending command to report modem bit")
+		require.Equal(t, 1, n, "number of bytes sent")
+		time.Sleep(100 * time.Millisecond) // wait 100 ms to get a response
+
+		buff := make([]byte, 1024)
+		n, err = target.Read(buff)
+		require.NoError(t, err)
+		bps, dtr, rts, err := parseTargetSerialStatus(buff[:n])
+		require.NoError(t, err)
+		require.Equal(t, exBps, bps)
+		require.Equal(t, exDtr, dtr)
+		require.Equal(t, exRts, rts)
+	}
+
+	log.Printf("T1 - Set target DTR=1 and RTS=1")
+	require.NoError(t, target.SetDTR(true))
+	require.NoError(t, target.SetRTS(true))
+	assertTargetSerialStatus(9600, true, true)
+	require.NoError(t, target.SetDTR(false))
+	assertTargetSerialStatus(9600, false, true)
+	require.NoError(t, target.SetDTR(true))
+	assertTargetSerialStatus(9600, true, true)
+	require.NoError(t, target.SetRTS(false))
+	assertTargetSerialStatus(9600, true, false)
+	require.NoError(t, target.SetRTS(true))
+	assertTargetSerialStatus(9600, true, true)
+	require.NoError(t, target.SetMode(&serial.Mode{BaudRate: 115200}))
+	assertTargetSerialStatus(115200, true, true)
+	target.SetMode(&serial.Mode{BaudRate: 38400})
+	assertTargetSerialStatus(38400, true, true)
+}
+
+var serialReportRE = regexp.MustCompile("BPS=([0-9]+) DTR=([01]) RTS=([01])")
+
+func parseTargetSerialStatus(buff []byte) (bps int, dtr, rts bool, err error) {
+	line := strings.TrimSpace(string(buff))
+	match := serialReportRE.FindAllStringSubmatch(line, 1)
+	if len(match) == 0 || len(match[0]) != 4 {
+		err = errors.New("invalid serial status report from target")
+		return
+	}
+	fields := match[0]
+	bps, err = strconv.Atoi(fields[1])
+	if err != nil {
+		err = errors.New("invalid BPS report from target: " + err.Error())
+		return
+	}
+	dtr = (fields[2][0] == '1')
+	rts = (fields[3][0] == '1')
+	return
 }
