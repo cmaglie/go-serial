@@ -30,7 +30,7 @@ Two different boards have been choosen so they can be uniquely identified via US
 
 ## Running the testsuite
 
-Just run `go test` as usual. I suggest adding `-v` that will produce more output for diagnostics.
+Run `go test -v -tags=testsuite` from the `testsuite` directory.
 
 At the moment there are 4 tests:
 

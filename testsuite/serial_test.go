@@ -4,6 +4,8 @@
 // license that can be found in the LICENSE file.
 //
 
+// +build testsuite
+
 package testsuite
 
 import (
