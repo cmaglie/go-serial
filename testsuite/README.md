@@ -34,31 +34,30 @@ Run `go test -v -tags=testsuite` from the `testsuite` directory.
 
 At the moment there are 4 tests:
 
-* TestConcurrentReadAndWrite
-* TestDisconnectingPortDetection
-* TestFlushRXSerialBuffer
-* TestModemBitsAndPortSpeedChange
+- TestConcurrentReadAndWrite
+- TestDisconnectingPortDetection
+- TestFlushRXSerialBuffer
+- TestModemBitsAndPortSpeedChange
 
 This is the result I got from my testing machines:
 
-| [Linux (x86_64)](test_run_linux_x86_64.txt) | Result |
-| --------------------------- | :----------------: |
-| ConcurrentReadAndWrite      | :heavy_check_mark: |
-| DisconnectingPortDetection  | :heavy_check_mark: |
-| FlushRXSerialBuffer         | :heavy_check_mark: |
-| ModemBitsAndPortSpeedChange | :heavy_check_mark: |
+| [Linux (x86_64)](test_run_linux_x86_64.txt) |       Result       |
+| ------------------------------------------- | :----------------: |
+| ConcurrentReadAndWrite                      | :heavy_check_mark: |
+| DisconnectingPortDetection                  | :heavy_check_mark: |
+| FlushRXSerialBuffer                         | :heavy_check_mark: |
+| ModemBitsAndPortSpeedChange                 | :heavy_check_mark: |
 
-| [Windows 10 (x86_64)](test_run_windows10_x86_64.txt) | Result |
-| --------------------------- | :----------------: |
-| ConcurrentReadAndWrite      | :heavy_check_mark: |
-| DisconnectingPortDetection  | :heavy_check_mark: |
-| FlushRXSerialBuffer         | :heavy_check_mark: |
-| ModemBitsAndPortSpeedChange | :heavy_check_mark: |
+| [Windows 10 (x86_64)](test_run_windows10_x86_64.txt) |       Result       |
+| ---------------------------------------------------- | :----------------: |
+| ConcurrentReadAndWrite                               | :heavy_check_mark: |
+| DisconnectingPortDetection                           | :heavy_check_mark: |
+| FlushRXSerialBuffer                                  | :heavy_check_mark: |
+| ModemBitsAndPortSpeedChange                          | :heavy_check_mark: |
 
-| [MacOSX Catalina (x86_64)](test_run_darwin_x86_64.txt) | Result |
-| --------------------------- | :----------------: |
-| ConcurrentReadAndWrite      | :x: (detect port closed but wrong error returned) |
-| DisconnectingPortDetection  | :heavy_check_mark: |
-| FlushRXSerialBuffer         | :x: (not working)  |
-| ModemBitsAndPortSpeedChange | :heavy_check_mark: |
-
+| [MacOSX Catalina (x86_64)](test_run_darwin_x86_64.txt) |                                Result                                |
+| ------------------------------------------------------ | :------------------------------------------------------------------: |
+| ConcurrentReadAndWrite                                 | :x: (communication OK, detects port closed but wrong error returned) |
+| DisconnectingPortDetection                             |                          :heavy_check_mark:                          |
+| FlushRXSerialBuffer                                    |                          :x: (not working)                           |
+| ModemBitsAndPortSpeedChange                            |                          :heavy_check_mark:                          |
