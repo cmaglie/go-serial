@@ -1,0 +1,93 @@
+=== RUN   TestConcurrentReadAndWrite
+2020/09/23 16:58:03 Starting test using probe
+2020/09/23 16:58:03 PR - Connecting to Probe
+2020/09/23 16:58:03    - Test will timeout in 20s
+2020/09/23 16:58:03 PR - Turn ON target
+2020/09/23 16:58:03 TR - Connecting to Target
+2020/09/23 16:58:03      > Searching for port 2341:8036
+2020/09/23 16:58:12        Detected port 'COM8'
+2020/09/23 16:58:12 T2 - Waiting on Read()
+2020/09/23 16:58:12 T1 - Sending 1 byte...
+2020/09/23 16:58:12 T1 - Sending 1 byte...
+2020/09/23 16:58:12 T1 - Sending 1 byte...
+2020/09/23 16:58:12 T1 - Sending 1 byte...
+2020/09/23 16:58:12 T1 - Sending 1 byte...
+2020/09/23 16:58:12 T1 - Done sending. elapsed/expected=103.6653ms/100ms
+2020/09/23 16:58:12 T2 - Returned from read. n=0 err=Port has been closed: Operazione di I/O terminata a causa dell'uscita dal thread oppure della richiesta di un'applicazione.
+2020/09/23 16:58:12 T2 - Completed
+2020/09/23 16:58:12 T1 - Completed
+2020/09/23 16:58:12    - Test completed normally
+2020/09/23 16:58:12 PR - Turn OFF target
+2020/09/23 16:58:12      > Waiting for port 2341:8036 to be deinitialized
+2020/09/23 16:58:13 PR - Disconnecting Probe
+2020/09/23 16:58:13 Test ended
+--- PASS: TestConcurrentReadAndWrite (10.16s)
+=== RUN   TestDisconnectingPortDetection
+2020/09/23 16:58:13 Starting test using probe
+2020/09/23 16:58:13 PR - Connecting to Probe
+2020/09/23 16:58:13    - Test will timeout in 20s
+2020/09/23 16:58:13 PR - Turn ON target
+2020/09/23 16:58:13 TR - Connecting to Target
+2020/09/23 16:58:13      > Searching for port 2341:8036
+2020/09/23 16:58:22        Detected port 'COM8'
+2020/09/23 16:58:22 T1 - Make a Read call
+2020/09/23 16:58:22 T2 - Delay 200ms before disconnecting target
+2020/09/23 16:58:22 T2 - Disconnect target
+2020/09/23 16:58:22 PR - Turn OFF target
+2020/09/23 16:58:22      > Waiting for port 2341:8036 to be deinitialized
+2020/09/23 16:58:22 T1 - Read returned: n=0 err=Port has been closed: Operazione di I/O terminata a causa dell'uscita dal thread oppure della richiesta di un'applicazione.
+2020/09/23 16:58:23 T2 - Completed
+2020/09/23 16:58:23 T1 - Completed
+2020/09/23 16:58:23    - Test completed normally
+2020/09/23 16:58:23 PR - Turn OFF target
+2020/09/23 16:58:23      > Waiting for port 2341:8036 to be deinitialized
+2020/09/23 16:58:23 PR - Disconnecting Probe
+2020/09/23 16:58:23 Test ended
+--- PASS: TestDisconnectingPortDetection (10.18s)
+=== RUN   TestFlushRXSerialBuffer
+2020/09/23 16:58:23 Starting test using probe
+2020/09/23 16:58:23 PR - Connecting to Probe
+2020/09/23 16:58:23    - Test will timeout in 20s
+2020/09/23 16:58:23 PR - Turn ON target
+2020/09/23 16:58:23 TR - Connecting to Target
+2020/09/23 16:58:23      > Searching for port 2341:8036
+2020/09/23 16:58:32        Detected port 'COM8'
+2020/09/23 16:58:32 T1 - Starting echo test and sending 'HELLO!' to the target
+2020/09/23 16:58:32 T1 - Waiting a bit to receive data back
+2020/09/23 16:58:33 T1 - Reading the first echoed char (should be 'H')
+2020/09/23 16:58:33 T1 - Flushing read buffer...
+2020/09/23 16:58:33 T1 - Sending 'X' to target
+2020/09/23 16:58:33 T1 - Waiting a bit to receive data back
+2020/09/23 16:58:33 T1 - Reading the first echoed char (should be 'X', and 'ELLO!' should be discarded)
+2020/09/23 16:58:33 T1 - Completed
+2020/09/23 16:58:33    - Test completed normally
+2020/09/23 16:58:33 PR - Turn OFF target
+2020/09/23 16:58:33      > Waiting for port 2341:8036 to be deinitialized
+2020/09/23 16:58:33 PR - Disconnecting Probe
+2020/09/23 16:58:33 Test ended
+--- PASS: TestFlushRXSerialBuffer (10.24s)
+=== RUN   TestModemBitsAndPortSpeedChange
+2020/09/23 16:58:33 Starting test using probe
+2020/09/23 16:58:33 PR - Connecting to Probe
+2020/09/23 16:58:33    - Test will timeout in 20s
+2020/09/23 16:58:33 PR - Turn ON target
+2020/09/23 16:58:33 TR - Connecting to Target
+2020/09/23 16:58:33      > Searching for port 2341:8036
+2020/09/23 16:58:43        Detected port 'COM8'
+2020/09/23 16:58:43 T1 - Set target DTR=1 and RTS=1
+2020/09/23 16:58:43 T1 - Acquire port config from target
+2020/09/23 16:58:43 T1 - Acquire port config from target
+2020/09/23 16:58:43 T1 - Acquire port config from target
+2020/09/23 16:58:43 T1 - Acquire port config from target
+2020/09/23 16:58:43 T1 - Acquire port config from target
+2020/09/23 16:58:43 T1 - Acquire port config from target
+2020/09/23 16:58:43 T1 - Acquire port config from target
+2020/09/23 16:58:44 T1 - Completed
+2020/09/23 16:58:44    - Test completed normally
+2020/09/23 16:58:44 PR - Turn OFF target
+2020/09/23 16:58:44      > Waiting for port 2341:8036 to be deinitialized
+2020/09/23 16:58:44 PR - Disconnecting Probe
+2020/09/23 16:58:44 Test ended
+--- PASS: TestModemBitsAndPortSpeedChange (10.87s)
+PASS
+ok  	go.bug.st/serial/testsuite	41.724s
