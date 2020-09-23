@@ -48,3 +48,10 @@ This is the result I got from my testing machines:
 | FlushRXSerialBuffer         | :heavy_check_mark: |
 | ModemBitsAndPortSpeedChange | :heavy_check_mark: |
 
+| [Windows 10 (x86_64)](test_run_windows10_x86_64.txt) | Result |
+| --------------------------- | :----------------: |
+| ConcurrentReadAndWrite      | :heavy_check_mark: |
+| DisconnectingPortDetection  | :heavy_check_mark: |
+| FlushRXSerialBuffer         | :heavy_check_mark: |
+| ModemBitsAndPortSpeedChange | :heavy_check_mark: |
+
