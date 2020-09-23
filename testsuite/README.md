@@ -55,3 +55,10 @@ This is the result I got from my testing machines:
 | FlushRXSerialBuffer         | :heavy_check_mark: |
 | ModemBitsAndPortSpeedChange | :heavy_check_mark: |
 
+| [MacOSX Catalina (x86_64)](test_run_darwin_x86_64.txt) | Result |
+| --------------------------- | :----------------: |
+| ConcurrentReadAndWrite      | :x: (detect port closed but wrong error returned) |
+| DisconnectingPortDetection  | :heavy_check_mark: |
+| FlushRXSerialBuffer         | :x: (not working)  |
+| ModemBitsAndPortSpeedChange | :heavy_check_mark: |
+

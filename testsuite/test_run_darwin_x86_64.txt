@@ -1,0 +1,103 @@
+=== RUN   TestConcurrentReadAndWrite
+2020/09/23 17:11:10 Starting test using probe
+2020/09/23 17:11:10 PR - Connecting to Probe
+2020/09/23 17:11:10    - Test will timeout in 20s
+2020/09/23 17:11:10 PR - Turn ON target
+2020/09/23 17:11:10 TR - Connecting to Target
+2020/09/23 17:11:10      > Searching for port 2341:8036
+2020/09/23 17:11:19        Detected port '/dev/cu.usbmodemFA1301'
+2020/09/23 17:11:19 T2 - Waiting on Read()
+2020/09/23 17:11:19 T1 - Sending 1 byte...
+2020/09/23 17:11:19 T1 - Sending 1 byte...
+2020/09/23 17:11:19 T1 - Sending 1 byte...
+2020/09/23 17:11:19 T1 - Sending 1 byte...
+2020/09/23 17:11:19 T1 - Sending 1 byte...
+2020/09/23 17:11:19 T1 - Done sending. elapsed/expected=118.801264ms/100ms
+2020/09/23 17:11:19 T2 - Returned from read. n=0 err=bad file descriptor
+2020/09/23 17:11:19 T2 - Completed
+2020/09/23 17:11:19 T1 - Completed
+2020/09/23 17:11:19    - Test completed normally
+2020/09/23 17:11:19 PR - Turn OFF target
+2020/09/23 17:11:19      > Waiting for port 2341:8036 to be deinitialized
+2020/09/23 17:11:19 PR - Disconnecting Probe
+2020/09/23 17:11:19 Test ended
+--- FAIL: TestConcurrentReadAndWrite (9.73s)
+    serial_test.go:55: 
+        	Error Trace:	serial_test.go:55
+        	            				asm_amd64.s:1357
+        	Error:      	Should be true
+        	Test:       	TestConcurrentReadAndWrite
+        	Messages:   	Unexpected error during read: bad file descriptor
+=== RUN   TestDisconnectingPortDetection
+2020/09/23 17:11:19 Starting test using probe
+2020/09/23 17:11:19 PR - Connecting to Probe
+2020/09/23 17:11:19    - Test will timeout in 20s
+2020/09/23 17:11:19 PR - Turn ON target
+2020/09/23 17:11:19 TR - Connecting to Target
+2020/09/23 17:11:19      > Searching for port 2341:8036
+2020/09/23 17:11:28        Detected port '/dev/cu.usbmodemFA1301'
+2020/09/23 17:11:28 T1 - Make a Read call
+2020/09/23 17:11:28 T2 - Delay 200ms before disconnecting target
+2020/09/23 17:11:29 T2 - Disconnect target
+2020/09/23 17:11:29 PR - Turn OFF target
+2020/09/23 17:11:29      > Waiting for port 2341:8036 to be deinitialized
+2020/09/23 17:11:29 T1 - Read returned: n=0 err=device not configured
+2020/09/23 17:11:29 T2 - Completed
+2020/09/23 17:11:29 T1 - Completed
+2020/09/23 17:11:29    - Test completed normally
+2020/09/23 17:11:29 PR - Turn OFF target
+2020/09/23 17:11:29      > Waiting for port 2341:8036 to be deinitialized
+2020/09/23 17:11:29 PR - Disconnecting Probe
+2020/09/23 17:11:29 Test ended
+--- PASS: TestDisconnectingPortDetection (9.80s)
+=== RUN   TestFlushRXSerialBuffer
+2020/09/23 17:11:29 Starting test using probe
+2020/09/23 17:11:29 PR - Connecting to Probe
+2020/09/23 17:11:29    - Test will timeout in 20s
+2020/09/23 17:11:29 PR - Turn ON target
+2020/09/23 17:11:29 TR - Connecting to Target
+2020/09/23 17:11:29      > Searching for port 2341:8036
+2020/09/23 17:11:38        Detected port '/dev/cu.usbmodemFA1301'
+2020/09/23 17:11:38 T1 - Starting echo test and sending 'HELLO!' to the target
+2020/09/23 17:11:38 T1 - Waiting a bit to receive data back
+2020/09/23 17:11:38 T1 - Reading the first echoed char (should be 'H')
+2020/09/23 17:11:38 T1 - Flushing read buffer...
+2020/09/23 17:11:38 T1 - Completed
+2020/09/23 17:11:38    - Test completed normally
+2020/09/23 17:11:38 PR - Turn OFF target
+2020/09/23 17:11:38      > Waiting for port 2341:8036 to be deinitialized
+2020/09/23 17:11:39 PR - Disconnecting Probe
+2020/09/23 17:11:39 Test ended
+--- FAIL: TestFlushRXSerialBuffer (9.71s)
+    serial_test.go:150: 
+        	Error Trace:	serial_test.go:150
+        	Error:      	Received unexpected error:
+        	            	bad address
+        	Test:       	TestFlushRXSerialBuffer
+        	Messages:   	Error flushing rx buffer
+=== RUN   TestModemBitsAndPortSpeedChange
+2020/09/23 17:11:39 Starting test using probe
+2020/09/23 17:11:39 PR - Connecting to Probe
+2020/09/23 17:11:39    - Test will timeout in 20s
+2020/09/23 17:11:39 PR - Turn ON target
+2020/09/23 17:11:39 TR - Connecting to Target
+2020/09/23 17:11:39      > Searching for port 2341:8036
+2020/09/23 17:11:48        Detected port '/dev/cu.usbmodemFA1301'
+2020/09/23 17:11:48 T1 - Set target DTR=1 and RTS=1
+2020/09/23 17:11:48 T1 - Acquire port config from target
+2020/09/23 17:11:48 T1 - Acquire port config from target
+2020/09/23 17:11:48 T1 - Acquire port config from target
+2020/09/23 17:11:48 T1 - Acquire port config from target
+2020/09/23 17:11:48 T1 - Acquire port config from target
+2020/09/23 17:11:48 T1 - Acquire port config from target
+2020/09/23 17:11:48 T1 - Acquire port config from target
+2020/09/23 17:11:49 T1 - Completed
+2020/09/23 17:11:49    - Test completed normally
+2020/09/23 17:11:49 PR - Turn OFF target
+2020/09/23 17:11:49      > Waiting for port 2341:8036 to be deinitialized
+2020/09/23 17:11:49 PR - Disconnecting Probe
+2020/09/23 17:11:49 Test ended
+--- PASS: TestModemBitsAndPortSpeedChange (10.31s)
+FAIL
+exit status 1
+FAIL	go.bug.st/serial/testsuite	39.580s
