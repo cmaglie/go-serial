@@ -1,0 +1,97 @@
+=== RUN   TestConcurrentReadAndWrite
+2020/09/22 01:09:00 Starting test using probe
+2020/09/22 01:09:00 PR - Connecting to Probe
+2020/09/22 01:09:00    - Test will timeout in 20s
+2020/09/22 01:09:00 PR - Turn ON target
+2020/09/22 01:09:00 TR - Connecting to Target
+2020/09/22 01:09:00      > Searching for port 2341:8036
+2020/09/22 01:09:09        Detected port '/dev/ttyACM1'
+2020/09/22 01:09:09 TR - Port busy... waiting 1 sec and retry
+2020/09/22 01:09:10 T2 - Waiting on Read()
+2020/09/22 01:09:10 T1 - Sending 1 byte...
+2020/09/22 01:09:10 T1 - Sending 1 byte...
+2020/09/22 01:09:10 T1 - Sending 1 byte...
+2020/09/22 01:09:10 T1 - Sending 1 byte...
+2020/09/22 01:09:10 T1 - Sending 1 byte...
+2020/09/22 01:09:10 T1 - Done sending. elapsed/expected=101.544092ms/100ms
+2020/09/22 01:09:10 T2 - Returned from read. n=0 err=Port has been closed
+2020/09/22 01:09:10 T2 - Completed
+2020/09/22 01:09:10 T1 - Completed
+2020/09/22 01:09:10    - Test completed normally
+2020/09/22 01:09:10 PR - Turn OFF target
+2020/09/22 01:09:10      > Waiting for port 2341:8036 to be deinitialized
+2020/09/22 01:09:11 PR - Disconnecting Probe
+2020/09/22 01:09:11 Test ended
+--- PASS: TestConcurrentReadAndWrite (10.42s)
+=== RUN   TestDisconnectingPortDetection
+2020/09/22 01:09:11 Starting test using probe
+2020/09/22 01:09:11 PR - Connecting to Probe
+2020/09/22 01:09:11    - Test will timeout in 20s
+2020/09/22 01:09:11 PR - Turn ON target
+2020/09/22 01:09:11 TR - Connecting to Target
+2020/09/22 01:09:11      > Searching for port 2341:8036
+2020/09/22 01:09:19        Detected port '/dev/ttyACM1'
+2020/09/22 01:09:19 TR - Port busy... waiting 1 sec and retry
+2020/09/22 01:09:20 T1 - Make a Read call
+2020/09/22 01:09:20 T2 - Delay 200ms before disconnecting target
+2020/09/22 01:09:21 T2 - Disconnect target
+2020/09/22 01:09:21 PR - Turn OFF target
+2020/09/22 01:09:21      > Waiting for port 2341:8036 to be deinitialized
+2020/09/22 01:09:21 T1 - Read returned: n=0 err=Port has been closed
+2020/09/22 01:09:21 T2 - Completed
+2020/09/22 01:09:21 T1 - Completed
+2020/09/22 01:09:21    - Test completed normally
+2020/09/22 01:09:21 PR - Turn OFF target
+2020/09/22 01:09:21      > Waiting for port 2341:8036 to be deinitialized
+2020/09/22 01:09:21 PR - Disconnecting Probe
+2020/09/22 01:09:21 Test ended
+--- PASS: TestDisconnectingPortDetection (10.52s)
+=== RUN   TestFlushRXSerialBuffer
+2020/09/22 01:09:21 Starting test using probe
+2020/09/22 01:09:21 PR - Connecting to Probe
+2020/09/22 01:09:21    - Test will timeout in 20s
+2020/09/22 01:09:21 PR - Turn ON target
+2020/09/22 01:09:21 TR - Connecting to Target
+2020/09/22 01:09:21      > Searching for port 2341:8036
+2020/09/22 01:09:30        Detected port '/dev/ttyACM1'
+2020/09/22 01:09:30 TR - Port busy... waiting 1 sec and retry
+2020/09/22 01:09:31 T1 - Starting echo test and sending 'HELLO!' to the target
+2020/09/22 01:09:31 T1 - Waiting a bit to receive data back
+2020/09/22 01:09:31 T1 - Reading the first echoed char (should be 'H')
+2020/09/22 01:09:31 T1 - Flushing read buffer...
+2020/09/22 01:09:31 T1 - Sending 'X' to target
+2020/09/22 01:09:31 T1 - Waiting a bit to receive data back
+2020/09/22 01:09:31 T1 - Reading the first echoed char (should be 'X', and 'ELLO!' should be discarded)
+2020/09/22 01:09:31 T1 - Completed
+2020/09/22 01:09:31    - Test completed normally
+2020/09/22 01:09:31 PR - Turn OFF target
+2020/09/22 01:09:31      > Waiting for port 2341:8036 to be deinitialized
+2020/09/22 01:09:32 PR - Disconnecting Probe
+2020/09/22 01:09:32 Test ended
+--- PASS: TestFlushRXSerialBuffer (10.53s)
+=== RUN   TestModemBitsAndPortSpeedChange
+2020/09/22 01:09:32 Starting test using probe
+2020/09/22 01:09:32 PR - Connecting to Probe
+2020/09/22 01:09:32    - Test will timeout in 20s
+2020/09/22 01:09:32 PR - Turn ON target
+2020/09/22 01:09:32 TR - Connecting to Target
+2020/09/22 01:09:32      > Searching for port 2341:8036
+2020/09/22 01:09:40        Detected port '/dev/ttyACM1'
+2020/09/22 01:09:40 TR - Port busy... waiting 1 sec and retry
+2020/09/22 01:09:41 T1 - Set target DTR=1 and RTS=1
+2020/09/22 01:09:41 T1 - Acquire port config from target
+2020/09/22 01:09:42 T1 - Acquire port config from target
+2020/09/22 01:09:42 T1 - Acquire port config from target
+2020/09/22 01:09:42 T1 - Acquire port config from target
+2020/09/22 01:09:42 T1 - Acquire port config from target
+2020/09/22 01:09:42 T1 - Acquire port config from target
+2020/09/22 01:09:42 T1 - Acquire port config from target
+2020/09/22 01:09:42 T1 - Completed
+2020/09/22 01:09:42    - Test completed normally
+2020/09/22 01:09:42 PR - Turn OFF target
+2020/09/22 01:09:42      > Waiting for port 2341:8036 to be deinitialized
+2020/09/22 01:09:43 PR - Disconnecting Probe
+2020/09/22 01:09:43 Test ended
+--- PASS: TestModemBitsAndPortSpeedChange (11.01s)
+PASS
+ok  	go.bug.st/serial/testsuite	42.472s
