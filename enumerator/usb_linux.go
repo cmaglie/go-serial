@@ -52,10 +52,10 @@ func nativeGetPortDetails(portPath string) (*PortDetails, error) {
 	result := &PortDetails{Name: portPath}
 	switch subSystem {
 	case "usb-serial":
-		err := parseUSBSysFS(filepath.Dir(filepath.Dir(realDevicePath)), result)
+		err := parseUSBSysFS(filepath.Dir(realDevicePath), result)
 		return result, err
 	case "usb":
-		err := parseUSBSysFS(filepath.Dir(realDevicePath), result)
+		err := parseUSBSysFS(realDevicePath, result)
 		return result, err
 	// TODO: other cases?
 	default:
@@ -64,15 +64,15 @@ func nativeGetPortDetails(portPath string) (*PortDetails, error) {
 }
 
 func parseUSBSysFS(usbDevicePath string, details *PortDetails) error {
-	vid, err := readLine(filepath.Join(usbDevicePath, "idVendor"))
+	vid, err := readLine(filepath.Join(usbDevicePath, "..", "idVendor"))
 	if err != nil {
 		return err
 	}
-	pid, err := readLine(filepath.Join(usbDevicePath, "idProduct"))
+	pid, err := readLine(filepath.Join(usbDevicePath, "..", "idProduct"))
 	if err != nil {
 		return err
 	}
-	serial, err := readLine(filepath.Join(usbDevicePath, "serial"))
+	serial, err := readLine(filepath.Join(usbDevicePath, "..", "serial"))
 	if err != nil {
 		return err
 	}
