@@ -76,6 +76,10 @@ func parseUSBSysFS(usbDevicePath string, details *PortDetails) error {
 	if err != nil {
 		return err
 	}
+	usbInterface, err := readLine(filepath.Join(usbDevicePath, "interface"))
+	if err != nil {
+		return err
+	}
 	//manufacturer, err := readLine(filepath.Join(usbDevicePath, "manufacturer"))
 	//if err != nil {
 	//	return err
@@ -89,6 +93,7 @@ func parseUSBSysFS(usbDevicePath string, details *PortDetails) error {
 	details.VID = vid
 	details.PID = pid
 	details.SerialNumber = serial
+	details.USBInterface = usbInterface
 	//details.Manufacturer = manufacturer
 	//details.Product = product
 	return nil
