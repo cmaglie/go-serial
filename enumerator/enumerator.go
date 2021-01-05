@@ -16,7 +16,7 @@ type PortDetails struct {
 	VID          string
 	PID          string
 	SerialNumber string
-
+	USBInterface string
 	// Manufacturer string
 
 	// Product is an OS-dependent string that describes the serial port, it may
