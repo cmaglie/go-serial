@@ -47,9 +47,11 @@ var (
 	procSetupDiGetDeviceInstanceIdW       = modsetupapi.NewProc("SetupDiGetDeviceInstanceIdW")
 	procSetupDiOpenDevRegKey              = modsetupapi.NewProc("SetupDiOpenDevRegKey")
 	procSetupDiGetDeviceRegistryPropertyW = modsetupapi.NewProc("SetupDiGetDeviceRegistryPropertyW")
+	procSetupDiGetDevicePropertyW         = modsetupapi.NewProc("SetupDiGetDevicePropertyW")
 	procCM_Get_Parent                     = modcfgmgr32.NewProc("CM_Get_Parent")
 	procCM_Get_Device_ID_Size             = modcfgmgr32.NewProc("CM_Get_Device_ID_Size")
 	procCM_Get_Device_IDW                 = modcfgmgr32.NewProc("CM_Get_Device_IDW")
+	procCM_Get_DevNode_Registry_PropertyW = modcfgmgr32.NewProc("CM_Get_DevNode_Registry_PropertyW")
 	procCM_MapCrToWin32Err                = modcfgmgr32.NewProc("CM_MapCrToWin32Err")
 )
 
@@ -142,6 +144,12 @@ func setupDiGetDeviceRegistryProperty(set devicesSet, devInfo *devInfoData, prop
 	return
 }
 
+func setupDiGetDeviceProperty(set devicesSet, devInfo *devInfoData, propKey *devPropKey, propType *devPropType, propBuff unsafe.Pointer, proBuffSite uint32, reqSize *uint32, flags uint32) (res bool) {
+	r0, _, _ := syscall.Syscall9(procSetupDiGetDevicePropertyW.Addr(), 8, uintptr(set), uintptr(unsafe.Pointer(devInfo)), uintptr(unsafe.Pointer(propKey)), uintptr(unsafe.Pointer(propType)), uintptr(propBuff), uintptr(proBuffSite), uintptr(unsafe.Pointer(reqSize)), uintptr(flags), 0)
+	res = r0 != 0
+	return
+}
+
 func cmGetParent(outParentDev *devInstance, dev devInstance, flags uint32) (cmErr cmError) {
 	r0, _, _ := syscall.Syscall(procCM_Get_Parent.Addr(), 3, uintptr(unsafe.Pointer(outParentDev)), uintptr(dev), uintptr(flags))
 	cmErr = cmError(r0)
@@ -157,6 +165,12 @@ func cmGetDeviceIDSize(outLen *uint32, dev devInstance, flags uint32) (cmErr cmE
 func cmGetDeviceID(dev devInstance, buffer unsafe.Pointer, bufferSize uint32, flags uint32) (err cmError) {
 	r0, _, _ := syscall.Syscall6(procCM_Get_Device_IDW.Addr(), 4, uintptr(dev), uintptr(buffer), uintptr(bufferSize), uintptr(flags), 0, 0)
 	err = cmError(r0)
+	return
+}
+
+func cmGetDevNodeRegistryProperty(dev devInstance, prop cmDrpProp, outRegDataType *uint32, buffer unsafe.Pointer, length *uint32, flags uint32) (cmErr cmError) {
+	r0, _, _ := syscall.Syscall6(procCM_Get_DevNode_Registry_PropertyW.Addr(), 6, uintptr(dev), uintptr(prop), uintptr(unsafe.Pointer(outRegDataType)), uintptr(buffer), uintptr(unsafe.Pointer(length)), uintptr(flags))
+	cmErr = cmError(r0)
 	return
 }
 
