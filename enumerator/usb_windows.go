@@ -61,11 +61,121 @@ func parseDeviceID(deviceID string, details *PortDetails) {
 //sys setupDiGetDeviceInstanceId(set devicesSet, devInfo *devInfoData, devInstanceId unsafe.Pointer, devInstanceIdSize uint32, requiredSize *uint32) (err error) = setupapi.SetupDiGetDeviceInstanceIdW
 //sys setupDiOpenDevRegKey(set devicesSet, devInfo *devInfoData, scope dicsScope, hwProfile uint32, keyType uint32, samDesired regsam) (hkey syscall.Handle, err error) = setupapi.SetupDiOpenDevRegKey
 //sys setupDiGetDeviceRegistryProperty(set devicesSet, devInfo *devInfoData, property deviceProperty, propertyType *uint32, outValue *byte, bufSize uint32, reqSize *uint32) (res bool) = setupapi.SetupDiGetDeviceRegistryPropertyW
+//sys setupDiGetDeviceProperty(set devicesSet, devInfo *devInfoData, propKey *devPropKey, propType *devPropType, propBuff unsafe.Pointer, proBuffSite uint32, reqSize *uint32, flags uint32) (res bool) = setupapi.SetupDiGetDevicePropertyW
+
+type devPropType uint32
+
+const (
+	devPropTypeEmpty                    devPropType = 0x00000000                               // nothing, no property data
+	devPropTypeNull                                 = 0x00000001                               // null property data
+	devPropTypeSBYTE                                = 0x00000002                               // 8-bit signed int (SBYTE)
+	devPropTypeBYTE                                 = 0x00000003                               // 8-bit unsigned int (BYTE)
+	devPropTypeINT16                                = 0x00000004                               // 16-bit signed int (SHORT)
+	devPropTypeUINT16                               = 0x00000005                               // 16-bit unsigned int (USHORT)
+	devPropTypeINT32                                = 0x00000006                               // 32-bit signed int (LONG)
+	devPropTypeUINT32                               = 0x00000007                               // 32-bit unsigned int (ULONG)
+	devPropTypeINT64                                = 0x00000008                               // 64-bit signed int (LONG64)
+	devPropTypeUINT64                               = 0x00000009                               // 64-bit unsigned int (ULONG64)
+	devPropTypeFloat                                = 0x0000000A                               // 32-bit floating-point (FLOAT)
+	devPropTypeDouble                               = 0x0000000B                               // 64-bit floating-point (DOUBLE)
+	devPropTypeDecimal                              = 0x0000000C                               // 128-bit data (DECIMAL)
+	devPropTypeGUID                                 = 0x0000000D                               // 128-bit unique identifier (GUID)
+	devPropTypeCurrency                             = 0x0000000E                               // 64 bit signed int currency value (CURRENCY)
+	devPropTypeDate                                 = 0x0000000F                               // date (DATE)
+	devPropTypeFiletime                             = 0x00000010                               // file time (FILETIME)
+	devPropTypeBoolean                              = 0x00000011                               // 8-bit boolean (DEVPROP_BOOLEAN)
+	devPropTypeString                   devPropType = 0x00000012                               // null-terminated string
+	devPropTypeStringList                           = (devPropTypeString | devPropTypeModList) // multi-sz string list
+	devPropTypeSecutiryDescriptor                   = 0x00000013                               // self-relative binary SECURITY_DESCRIPTOR
+	devPropTypeSecurityDescriptorString             = 0x00000014                               // security descriptor string (SDDL format)
+	devPropTypeDevPropKey                           = 0x00000015                               // device property key (DEVPROPKEY)
+	devPropTypeDevPropType                          = 0x00000016                               // device property type (DEVPROPTYPE)
+	devPropTypeBinary                               = (devPropTypeBYTE | devPropTypeModArray)  // custom binary data
+	devPropTypeError                                = 0x00000017                               // 32-bit Win32 system error code
+	devPropTypeNTStatus                             = 0x00000018                               // 32-bit NTSTATUS code
+	devPropTypeStringIndirect                       = 0x00000019                               // string resource (@[path\]<dllname>,-<strId>)
+
+	devPropTypeModArray = 0x00001000 // array of fixed-sized data elements
+	devPropTypeModList  = 0x00002000 // list of variable-sized data elements
+)
+
+type devPropGUID guid
+type devPropPid uint32
+
+type devPropKey struct {
+	fmtid devPropGUID
+	pid   devPropPid
+}
+
+// (full list here: https://github.com/tpn/winsdk-10/blob/master/Include/10.0.16299.0/shared/devpkey.h ...)
+var devPropKeyDeviceBusReportedDeviceDesc = devPropKey{devPropGUID{0x540b947e, 0x8b40, 0x45bc, [8]byte{0xa8, 0xa2, 0x6a, 0x0b, 0x89, 0x4c, 0xbd, 0xa2}}, 4} // DEVPROP_TYPE_STRING
 
 //sys cmGetParent(outParentDev *devInstance, dev devInstance, flags uint32) (cmErr cmError) = cfgmgr32.CM_Get_Parent
 //sys cmGetDeviceIDSize(outLen *uint32, dev devInstance, flags uint32) (cmErr cmError) = cfgmgr32.CM_Get_Device_ID_Size
 //sys cmGetDeviceID(dev devInstance, buffer unsafe.Pointer, bufferSize uint32, flags uint32) (err cmError) = cfgmgr32.CM_Get_Device_IDW
+//sys cmGetDevNodeRegistryProperty(dev devInstance, prop cmDrpProp, outRegDataType *uint32, buffer unsafe.Pointer, length *uint32, flags uint32) (cmErr cmError) = cfgmgr32.CM_Get_DevNode_Registry_PropertyW
 //sys cmMapCrToWin32Err(cmErr cmError, defaultErr uint32) (err uint32) = cfgmgr32.CM_MapCrToWin32Err
+
+//
+// Registry properties (specified in call to CM_Get_DevInst_Registry_Property or CM_Get_Class_Registry_Property,
+// some are allowed in calls to CM_Set_DevInst_Registry_Property and CM_Set_Class_Registry_Property)
+// CM_DRP_xxxx values should be used for CM_Get_DevInst_Registry_Property / CM_Set_DevInst_Registry_Property
+// CM_CRP_xxxx values should be used for CM_Get_Class_Registry_Property / CM_Set_Class_Registry_Property
+// DRP/CRP values that overlap must have a 1:1 correspondence with each other
+//
+
+type cmDrpProp uint32
+
+var (
+	cmDrpDeviceDesc               cmDrpProp = (0x00000001) // DeviceDesc REG_SZ property (RW)
+	cmDrpHardwareID               cmDrpProp = (0x00000002) // HardwareID REG_MULTI_SZ property (RW)
+	cmDrpCompatibleIDs            cmDrpProp = (0x00000003) // CompatibleIDs REG_MULTI_SZ property (RW)
+	cmDrpService                  cmDrpProp = (0x00000005) // Service REG_SZ property (RW)
+	cmDrpClass                    cmDrpProp = (0x00000008) // Class REG_SZ property (RW)
+	cmDrpClassGUID                cmDrpProp = (0x00000009) // ClassGUID REG_SZ property (RW)
+	cmDrpDriver                   cmDrpProp = (0x0000000A) // Driver REG_SZ property (RW)
+	cmDrpConfigFlahs              cmDrpProp = (0x0000000B) // ConfigFlags REG_DWORD property (RW)
+	cmDrpMFG                      cmDrpProp = (0x0000000C) // Mfg REG_SZ property (RW)
+	cmDrpFriendlyName             cmDrpProp = (0x0000000D) // FriendlyName REG_SZ property (RW)
+	cmDrpLocationInformation      cmDrpProp = (0x0000000E) // LocationInformation REG_SZ property (RW)
+	cmDrpPhysicalDeviceObjectName cmDrpProp = (0x0000000F) // PhysicalDeviceObjectName REG_SZ property (R)
+	cmDrpCapabilities             cmDrpProp = (0x00000010) // Capabilities REG_DWORD property (R)
+	cmDrpUINumber                 cmDrpProp = (0x00000011) // UiNumber REG_DWORD property (R)
+	cmDrpUpperFilters             cmDrpProp = (0x00000012) // UpperFilters REG_MULTI_SZ property (RW)
+	cmDrpLowerFilters             cmDrpProp = (0x00000013) // LowerFilters REG_MULTI_SZ property (RW)
+	cmDrpBusTypeGUID              cmDrpProp = (0x00000014) // Bus Type Guid, GUID, (R)
+	cmDrpLegacyBusType            cmDrpProp = (0x00000015) // Legacy bus type, INTERFACE_TYPE, (R)
+	cmDrpBusNumber                cmDrpProp = (0x00000016) // Bus Number, DWORD, (R)
+	cmDrpEnumeratorName           cmDrpProp = (0x00000017) // Enumerator Name REG_SZ property (R)
+	cmDrpSecurity                 cmDrpProp = (0x00000018) // Security - Device override (RW)
+	cmDrpSecuritySDS              cmDrpProp = (0x00000019) // Security - Device override (RW)
+	cmDrpDevType                  cmDrpProp = (0x0000001A) // Device Type - Device override (RW)
+	cmDrpExclusive                cmDrpProp = (0x0000001B) // Exclusivity - Device override (RW)
+	cmDrpCharacteristics          cmDrpProp = (0x0000001C) // Characteristics - Device Override (RW)
+	cmDrpAddress                  cmDrpProp = (0x0000001D) // Device Address (R)
+	cmDrpUINumberDescFormat       cmDrpProp = (0x0000001E) // UINumberDescFormat REG_SZ property (RW)
+	cmDrpDevicePowerData          cmDrpProp = (0x0000001F) // CM_POWER_DATA REG_BINARY property (R)
+	cmDrpRemovalPolicy            cmDrpProp = (0x00000020) // CM_DEVICE_REMOVAL_POLICY REG_DWORD (R)
+	cmDrpRemovalPolicyHWDefault   cmDrpProp = (0x00000021) // CM_DRP_REMOVAL_POLICY_HW_DEFAULT REG_DWORD (R)
+	cmDrpRemovalPolicyOverride    cmDrpProp = (0x00000022) // CM_DRP_REMOVAL_POLICY_OVERRIDE REG_DWORD (RW)
+	cmDrpInstallState             cmDrpProp = (0x00000023) // CM_DRP_INSTALL_STATE REG_DWORD (R)
+	cmDrpLocationPaths            cmDrpProp = (0x00000024) // CM_DRP_LOCATION_PATHS REG_MULTI_SZ (R)
+	cmDrpBaseContainerID          cmDrpProp = (0x00000025) // Base ContainerID REG_SZ property (R)
+	cmDrpMin                      cmDrpProp = (0x00000001) // First device register
+	cmDrpMax                      cmDrpProp = (0x00000025) // Last device register
+)
+
+var (
+	cmCrpUpperFilters    = cmDrpUpperFilters    // UpperFilters REG_MULTI_SZ property (RW)
+	cmCrpLowerFilters    = cmDrpLowerFilters    // LowerFilters REG_MULTI_SZ property (RW)
+	cmCrpSecurity        = cmDrpSecurity        // Class default security (RW)
+	cmCrpSecuritySDS     = cmDrpSecuritySDS     // Class default security (RW)
+	cmCrpDevType         = cmDrpDevType         // Class default Device-type (RW)
+	cmCrpExclusive       = cmDrpExclusive       // Class default (RW)
+	cmCrpCharacteristics = cmDrpCharacteristics // Class default (RW)
+	cmCrpMin             = cmDrpMin             // First class register
+	cmCrpMax             = cmDrpMax             // Last class register
+)
 
 // Device registry property codes
 // (Codes marked as read-only (R) may only be used for
@@ -341,6 +451,22 @@ func retrievePortDetailsFromDevInfo(device *deviceInfo, details *PortDetails) er
 			}
 		}
 	}
+
+	size := uint32(1024)
+	var s uint32
+	buf := make([]uint16, size)
+
+	//fmt.Println()
+	for i := cmDrpMin; i <= cmDrpMax; i++ {
+		size = 1024
+		cmGetDevNodeRegistryProperty(device.data.devInst, i, nil, unsafe.Pointer(&buf[0]), &size, 0)
+		//fmt.Println(i, ">", windows.UTF16ToString(buf[:]))
+	}
+
+	size = 1024
+	propType := devPropTypeString
+	setupDiGetDeviceProperty(device.set, &device.data, &devPropKeyDeviceBusReportedDeviceDesc, &propType, unsafe.Pointer(&buf[0]), uint32(len(buf)), &s, 0)
+	fmt.Println("BusReportedDeviceDesc>", windows.UTF16ToString(buf[:]))
 
 	/*	spdrpDeviceDesc returns a generic name, e.g.: "CDC-ACM", which will be the same for 2 identical devices attached
 		while spdrpFriendlyName returns a specific name, e.g.: "CDC-ACM (COM44)",
