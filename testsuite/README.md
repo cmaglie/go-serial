@@ -38,6 +38,7 @@ At the moment there are 4 tests:
 - TestDisconnectingPortDetection
 - TestFlushRXSerialBuffer
 - TestModemBitsAndPortSpeedChange
+- TestReadTimeout
 
 This is the result I got from my testing machines:
 
@@ -47,6 +48,7 @@ This is the result I got from my testing machines:
 | DisconnectingPortDetection                  | :heavy_check_mark: |
 | FlushRXSerialBuffer                         | :heavy_check_mark: |
 | ModemBitsAndPortSpeedChange                 | :heavy_check_mark: |
+| ReadTimeout                                 | :heavy_check_mark: |
 
 | [Windows 10 (x86_64)](test_run_windows10_x86_64.txt) |       Result       |
 | ---------------------------------------------------- | :----------------: |
@@ -54,6 +56,7 @@ This is the result I got from my testing machines:
 | DisconnectingPortDetection                           | :heavy_check_mark: |
 | FlushRXSerialBuffer                                  | :heavy_check_mark: |
 | ModemBitsAndPortSpeedChange                          | :heavy_check_mark: |
+| ReadTimeout                                          | :heavy_check_mark: |
 
 | [MacOSX Catalina (x86_64)](test_run_darwin_arm64.txt) |                                Result                                |
 | ----------------------------------------------------- | :------------------------------------------------------------------: |
@@ -61,3 +64,4 @@ This is the result I got from my testing machines:
 | DisconnectingPortDetection                            |                          :heavy_check_mark:                          |
 | FlushRXSerialBuffer                                   |                          :heavy_check_mark:                          |
 | ModemBitsAndPortSpeedChange                           |                          :heavy_check_mark:                          |
+| ReadTimeout                                           |                          :heavy_check_mark:                          |
