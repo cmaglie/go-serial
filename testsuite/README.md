@@ -42,26 +42,10 @@ At the moment there are 4 tests:
 
 This is the result I got from my testing machines:
 
-| [Linux (x86_64)](test_run_linux_x86_64.txt) |       Result       |
-| ------------------------------------------- | :----------------: |
-| ConcurrentReadAndWrite                      | :heavy_check_mark: |
-| DisconnectingPortDetection                  | :heavy_check_mark: |
-| FlushRXSerialBuffer                         | :heavy_check_mark: |
-| ModemBitsAndPortSpeedChange                 | :heavy_check_mark: |
-| ReadTimeout                                 | :heavy_check_mark: |
-
-| [Windows 10 (x86_64)](test_run_windows10_x86_64.txt) |       Result       |
-| ---------------------------------------------------- | :----------------: |
-| ConcurrentReadAndWrite                               | :heavy_check_mark: |
-| DisconnectingPortDetection                           | :heavy_check_mark: |
-| FlushRXSerialBuffer                                  | :heavy_check_mark: |
-| ModemBitsAndPortSpeedChange                          | :heavy_check_mark: |
-| ReadTimeout                                          | :heavy_check_mark: |
-
-| [MacOSX Catalina (x86_64)](test_run_darwin_arm64.txt) |                                Result                                |
-| ----------------------------------------------------- | :------------------------------------------------------------------: |
-| ConcurrentReadAndWrite                                | :x: (communication OK, detects port closed but wrong error returned) |
-| DisconnectingPortDetection                            |                          :heavy_check_mark:                          |
-| FlushRXSerialBuffer                                   |                          :heavy_check_mark:                          |
-| ModemBitsAndPortSpeedChange                           |                          :heavy_check_mark:                          |
-| ReadTimeout                                           |                          :heavy_check_mark:                          |
+| Test                        | [Linux (x86_64)](test_run_linux_x86_64.txt) | [Windows 10 (x86_64)](test_run_windows10_x86_64.txt) | [MacOSX 13.0.1 (arm64)](test_run_darwin_arm64.txt)                                                                                                                                                   |
+| --------------------------- | ------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ConcurrentReadAndWrite      | :heavy_check_mark:                          | :heavy_check_mark:                                   | [:x:](https://github.com/cmaglie/go-serial/blob/54fa0e6322b784cfa6d805eabf33b74b008e1b0f/testsuite/test_run_darwin_arm64.txt#L16-L22) communication OK, detects port closed but wrong error returned |
+| DisconnectingPortDetection  | :heavy_check_mark:                          | :heavy_check_mark:                                   | :heavy_check_mark:                                                                                                                                                                                   |
+| FlushRXSerialBuffer         | :heavy_check_mark:                          | :heavy_check_mark:                                   | :heavy_check_mark:                                                                                                                                                                                   |
+| ModemBitsAndPortSpeedChange | :heavy_check_mark:                          | :heavy_check_mark:                                   | :heavy_check_mark:                                                                                                                                                                                   |
+| ReadTimeout                 | :heavy_check_mark:                          | :heavy_check_mark:                                   | :heavy_check_mark:                                                                                                                                                                                   |
