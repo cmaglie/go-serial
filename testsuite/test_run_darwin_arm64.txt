@@ -1,0 +1,127 @@
+=== RUN   TestConcurrentReadAndWrite
+2022/11/28 12:44:09 Starting test using probe
+2022/11/28 12:44:09 PR - Connecting to Probe
+2022/11/28 12:44:09    - Test will timeout in 20s
+2022/11/28 12:44:09 PR - Turn ON target
+2022/11/28 12:44:09 TR - Connecting to Target
+2022/11/28 12:44:09      > Searching for port 2341:8036
+2022/11/28 12:44:18        Detected port '/dev/cu.usbmodem11101'
+2022/11/28 12:44:18 T2 - Waiting on Read()
+2022/11/28 12:44:18 T1 - Sending 1 byte...
+2022/11/28 12:44:18 T1 - Sending 1 byte...
+2022/11/28 12:44:18 T1 - Sending 1 byte...
+2022/11/28 12:44:18 T1 - Sending 1 byte...
+2022/11/28 12:44:18 T1 - Sending 1 byte...
+2022/11/28 12:44:18 T1 - Done sending. elapsed/expected=105.729625ms/100ms
+2022/11/28 12:44:18 T2 - Returned from read. n=0 err=bad file descriptor
+    serial_test.go:57: 
+        	Error Trace:	serial_test.go:57
+        	            				asm_arm64.s:1165
+        	Error:      	Should be true
+        	Test:       	TestConcurrentReadAndWrite
+        	Messages:   	Unexpected error during read: bad file descriptor
+2022/11/28 12:44:18 T2 - Completed
+2022/11/28 12:44:18 T1 - Completed
+2022/11/28 12:44:18    - Test completed normally
+2022/11/28 12:44:18 PR - Turn OFF target
+2022/11/28 12:44:18      > Waiting for port 2341:8036 to be deinitialized
+2022/11/28 12:44:19 PR - Disconnecting Probe
+2022/11/28 12:44:19 Test ended
+--- FAIL: TestConcurrentReadAndWrite (9.69s)
+=== RUN   TestDisconnectingPortDetection
+2022/11/28 12:44:19 Starting test using probe
+2022/11/28 12:44:19 PR - Connecting to Probe
+2022/11/28 12:44:19    - Test will timeout in 20s
+2022/11/28 12:44:19 PR - Turn ON target
+2022/11/28 12:44:19 TR - Connecting to Target
+2022/11/28 12:44:19      > Searching for port 2341:8036
+2022/11/28 12:44:28        Detected port '/dev/cu.usbmodem11101'
+2022/11/28 12:44:28 T1 - Make a Read call
+2022/11/28 12:44:28 T2 - Delay 200ms before disconnecting target
+2022/11/28 12:44:28 T2 - Disconnect target
+2022/11/28 12:44:28 PR - Turn OFF target
+2022/11/28 12:44:28      > Waiting for port 2341:8036 to be deinitialized
+2022/11/28 12:44:28 T1 - Read returned: n=0 err=device not configured
+2022/11/28 12:44:28 T2 - Completed
+2022/11/28 12:44:28 T1 - Completed
+2022/11/28 12:44:28    - Test completed normally
+2022/11/28 12:44:28 PR - Turn OFF target
+2022/11/28 12:44:28      > Waiting for port 2341:8036 to be deinitialized
+2022/11/28 12:44:28 PR - Disconnecting Probe
+2022/11/28 12:44:28 Test ended
+--- PASS: TestDisconnectingPortDetection (9.78s)
+=== RUN   TestFlushRXSerialBuffer
+2022/11/28 12:44:28 Starting test using probe
+2022/11/28 12:44:28 PR - Connecting to Probe
+2022/11/28 12:44:28    - Test will timeout in 20s
+2022/11/28 12:44:28 PR - Turn ON target
+2022/11/28 12:44:28 TR - Connecting to Target
+2022/11/28 12:44:28      > Searching for port 2341:8036
+2022/11/28 12:44:38        Detected port '/dev/cu.usbmodem11101'
+2022/11/28 12:44:38 T1 - Starting echo test and sending 'HELLO!' to the target
+2022/11/28 12:44:38 T1 - Waiting a bit to receive data back
+2022/11/28 12:44:38 T1 - Reading the first echoed char (should be 'H')
+2022/11/28 12:44:38 T1 - Flushing read buffer...
+2022/11/28 12:44:38 T1 - Sending 'X' to target
+2022/11/28 12:44:38 T1 - Waiting a bit to receive data back
+2022/11/28 12:44:38 T1 - Reading the first echoed char (should be 'X', and 'ELLO!' should be discarded)
+2022/11/28 12:44:38 T1 - Completed
+2022/11/28 12:44:38    - Test completed normally
+2022/11/28 12:44:38 PR - Turn OFF target
+2022/11/28 12:44:38      > Waiting for port 2341:8036 to be deinitialized
+2022/11/28 12:44:38 PR - Disconnecting Probe
+2022/11/28 12:44:38 Test ended
+--- PASS: TestFlushRXSerialBuffer (9.78s)
+=== RUN   TestModemBitsAndPortSpeedChange
+2022/11/28 12:44:38 Starting test using probe
+2022/11/28 12:44:38 PR - Connecting to Probe
+2022/11/28 12:44:38    - Test will timeout in 20s
+2022/11/28 12:44:38 PR - Turn ON target
+2022/11/28 12:44:38 TR - Connecting to Target
+2022/11/28 12:44:38      > Searching for port 2341:8036
+2022/11/28 12:44:47        Detected port '/dev/cu.usbmodem11101'
+2022/11/28 12:44:47 T1 - Set target DTR=1 and RTS=1
+2022/11/28 12:44:47 T1 - Acquire port config from target
+2022/11/28 12:44:47 T1 - Acquire port config from target
+2022/11/28 12:44:47 T1 - Acquire port config from target
+2022/11/28 12:44:47 T1 - Acquire port config from target
+2022/11/28 12:44:47 T1 - Acquire port config from target
+2022/11/28 12:44:47 T1 - Acquire port config from target
+2022/11/28 12:44:47 T1 - Acquire port config from target
+2022/11/28 12:44:48 T1 - Completed
+2022/11/28 12:44:48    - Test completed normally
+2022/11/28 12:44:48 PR - Turn OFF target
+2022/11/28 12:44:48      > Waiting for port 2341:8036 to be deinitialized
+2022/11/28 12:44:48 PR - Disconnecting Probe
+2022/11/28 12:44:48 Test ended
+--- PASS: TestModemBitsAndPortSpeedChange (9.79s)
+=== RUN   TestReadTimeout
+2022/11/28 12:44:48 Starting test using probe
+2022/11/28 12:44:48 PR - Connecting to Probe
+2022/11/28 12:44:48    - Test will timeout in 20s
+2022/11/28 12:44:48 PR - Turn ON target
+2022/11/28 12:44:48 TR - Connecting to Target
+2022/11/28 12:44:48      > Searching for port 2341:8036
+2022/11/28 12:44:57        Detected port '/dev/cu.usbmodem11101'
+2022/11/28 12:44:57 T1 - Set read timeout to 2500ms
+2022/11/28 12:44:57 T1 - Make a Read call
+2022/11/28 12:44:57 T2 - Delay 5000ms before disconnecting target
+2022/11/28 12:45:00 T1 - Read returned: n=0 err=<nil> after 2.502559458s
+2022/11/28 12:45:00 T1 - Starting ECHO test
+2022/11/28 12:45:00 T1 - Sending 'X' to target
+2022/11/28 12:45:00 T1 - Reading the echoed char (should be 'X')
+2022/11/28 12:45:00 T1 - Read returned: n=1 err=<nil> after 1.017ms
+2022/11/28 12:45:02 T2 - Disconnect target
+2022/11/28 12:45:02 PR - Turn OFF target
+2022/11/28 12:45:02      > Waiting for port 2341:8036 to be deinitialized
+2022/11/28 12:45:02 T1 - Read returned: n=0 err=device not configured
+2022/11/28 12:45:02 T1 - Completed
+2022/11/28 12:45:02    - Test completed normally
+2022/11/28 12:45:02 PR - Turn OFF target
+2022/11/28 12:45:02      > Waiting for port 2341:8036 to be deinitialized
+2022/11/28 12:45:02 PR - Disconnecting Probe
+2022/11/28 12:45:02 Test ended
+--- PASS: TestReadTimeout (14.23s)
+FAIL
+exit status 1
+FAIL	go.bug.st/serial/testsuite	53.382s
