@@ -183,6 +183,11 @@ func (port *windowsPort) setModeParams(mode *Mode, params *windows.DCB) {
 	}
 	params.StopBits = stopBitsMap[mode.StopBits]
 	params.Parity = parityMap[mode.Parity]
+	if mode.Parity == NoParity {
+		params.Flags &^= dcbParity
+	} else {
+		params.Flags |= dcbParity
+	}
 }
 
 func (port *windowsPort) SetDTR(dtr bool) error {
