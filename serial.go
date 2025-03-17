@@ -124,11 +124,11 @@ type StopBits int
 
 const (
 	// OneStopBit sets 1 stop bit (default)
-	OneStopBit StopBits = iota
-	// OnePointFiveStopBits sets 1.5 stop bits
-	OnePointFiveStopBits
+	OneStopBit StopBits = 1
 	// TwoStopBits sets 2 stop bits
-	TwoStopBits
+	TwoStopBits = 2
+	// OnePointFiveStopBits sets 1.5 stop bits
+	OnePointFiveStopBits = 3
 )
 
 // PortError is a platform independent error type for serial ports
