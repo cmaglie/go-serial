@@ -355,6 +355,7 @@ func nativeOpen(portName string, mode *Mode) (*windowsPort, error) {
 		return nil, &PortError{code: InvalidSerialPort}
 	}
 	port.setModeParams(mode, params)
+	params.Flags |= dcbBinary // Enable binary transmission
 	params.Flags &= dcbDTRControlDisableMask
 	params.Flags &= dcbRTSControlDisableMask
 	if mode.InitialStatusBits == nil {
@@ -372,13 +373,11 @@ func nativeOpen(portName string, mode *Mode) (*windowsPort, error) {
 	params.Flags &^= dcbOutXDSRFlow
 	params.Flags &^= dcbDSRSensitivity
 	params.Flags |= dcbTXContinueOnXOFF
-	params.Flags &^= dcbInX
-	params.Flags &^= dcbOutX
+	params.Flags &^= dcbInX  // XON/XOFF disabled
+	params.Flags &^= dcbOutX // XON/XOFF disabled
 	params.Flags &^= dcbErrorChar
 	params.Flags &^= dcbNull
 	params.Flags &^= dcbAbortOnError
-	params.XonLim = 2048
-	params.XoffLim = 512
 	params.XonChar = 17  // DC1
 	params.XoffChar = 19 // C3
 	if windows.SetCommState(port.handle, params) != nil {
