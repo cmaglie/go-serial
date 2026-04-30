@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"go.bug.st/serial/unixutils"
@@ -81,6 +82,10 @@ func (port *unixPort) Read(p []byte) (int, error) {
 		res, err := unixutils.Select(fds, nil, fds, timeout)
 		if err == unix.EINTR {
 			continue
+		}
+		// MacOSX: a select on a closed FD will return immediately a "bad file descriptor"
+		if err == syscall.EBADF {
+			return 0, &PortError{code: PortClosed, causedBy: err}
 		}
 		if err != nil {
 			return 0, err
