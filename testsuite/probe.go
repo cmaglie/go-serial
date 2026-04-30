@@ -85,11 +85,11 @@ func (test *Probe) TurnOffTarget() error {
 
 func (test *Probe) sendCommand(cmd byte) error {
 	if n, err := test.port.Write([]byte{cmd}); n != 1 || err != nil {
-		return fmt.Errorf("Communication error: %s", err)
+		return fmt.Errorf("communication error: %s", err)
 	}
 	buff := make([]byte, 1)
 	if _, err := test.port.Read(buff); err != nil {
-		return fmt.Errorf("Communication error: %s", err)
+		return fmt.Errorf("communication error: %s", err)
 	}
 	return nil
 }
