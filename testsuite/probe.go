@@ -50,7 +50,7 @@ func NewProbe(t *testing.T, timeout time.Duration) *Probe {
 	require.NoError(t, err, "Could not connect to probe")
 
 	//time.Sleep(time.Millisecond * 2000)
-	test := &Probe{
+	probe := &Probe{
 		t:         t,
 		timeout:   timeout,
 		end:       make(chan bool, 1),
@@ -60,45 +60,45 @@ func NewProbe(t *testing.T, timeout time.Duration) *Probe {
 		targetPid: config.Get("target.pid"),
 	}
 
-	go test.testTimeoutHandler()
+	go probe.testTimeoutHandler()
 	log.Printf("   - Test will timeout in %s", timeout)
 
-	return test
+	return probe
 }
 
 // TurnOnTarget turns on the Target board.
-func (test *Probe) TurnOnTarget() error {
+func (probe *Probe) TurnOnTarget() error {
 	log.Println("PR - Turn ON target")
-	return test.sendCommand('1')
+	return probe.sendCommand('1')
 }
 
 // TurnOffTarget turns off the Target board.
-func (test *Probe) TurnOffTarget() error {
+func (probe *Probe) TurnOffTarget() error {
 	log.Println("PR - Turn OFF target")
-	err := test.sendCommand('0')
+	err := probe.sendCommand('0')
 	if err == nil {
 		// give some time to the Target to fully disconnect
-		err = WaitForPortToDisappear(test.targetVid, test.targetPid, 15*time.Second, 500*time.Millisecond)
+		err = WaitForPortToDisappear(probe.targetVid, probe.targetPid, 15*time.Second, 500*time.Millisecond)
 	}
 	return err
 }
 
-func (test *Probe) sendCommand(cmd byte) error {
-	if n, err := test.port.Write([]byte{cmd}); n != 1 || err != nil {
+func (probe *Probe) sendCommand(cmd byte) error {
+	if n, err := probe.port.Write([]byte{cmd}); n != 1 || err != nil {
 		return fmt.Errorf("communication error: %s", err)
 	}
 	buff := make([]byte, 1)
-	if _, err := test.port.Read(buff); err != nil {
+	if _, err := probe.port.Read(buff); err != nil {
 		return fmt.Errorf("communication error: %s", err)
 	}
 	return nil
 }
 
 // ConnectToTarget attempts to connect to the Target board.
-func (test *Probe) ConnectToTarget(t *testing.T) serial.Port {
+func (probe *Probe) ConnectToTarget(t *testing.T) serial.Port {
 	log.Println("TR - Connecting to Target")
 
-	portName, err := PollToFindPortWithVIDPID(test.targetVid, test.targetPid, 15*time.Second, 500*time.Millisecond)
+	portName, err := PollToFindPortWithVIDPID(probe.targetVid, probe.targetPid, 15*time.Second, 500*time.Millisecond)
 	require.NoError(t, err, "Could not search for target")
 	require.NotEmpty(t, portName, "Target not found")
 	port, err := serial.Open(portName, &serial.Mode{})
@@ -112,30 +112,30 @@ func (test *Probe) ConnectToTarget(t *testing.T) serial.Port {
 	return port
 }
 
-func (test *Probe) testTimeoutHandler() {
+func (probe *Probe) testTimeoutHandler() {
 	select {
-	case <-test.end:
+	case <-probe.end:
 		// Test ended before timeout
 		log.Printf("   - Test completed normally")
-		test.TurnOffTarget()
+		probe.TurnOffTarget()
 
-	case <-time.After(test.timeout):
+	case <-time.After(probe.timeout):
 		log.Printf("   ! Test timed-out")
-		assert.Fail(test.t, "Test timed-out")
-		test.TurnOffTarget()
-		<-test.end
+		assert.Fail(probe.t, "Test timed-out")
+		probe.TurnOffTarget()
+		<-probe.end
 	}
 	log.Println("PR - Disconnecting Probe")
-	test.port.Close()
-	test.ended <- true
+	probe.port.Close()
+	probe.ended <- true
 }
 
 // Completed must be called when the test ends before the
 // timeout. This doesn't mean that the test is successful
 // but just that the test ended before the timeout and the
 // used resources can be freed.
-func (test *Probe) Completed() {
-	test.end <- true
-	<-test.ended
+func (probe *Probe) Completed() {
+	probe.end <- true
+	<-probe.ended
 	log.Println("Test ended")
 }
