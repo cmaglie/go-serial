@@ -23,11 +23,6 @@ import (
 
 func TestConcurrentReadAndWrite(t *testing.T) {
 	probe := NewProbe(t, 20*time.Second)
-	defer func() {
-		log.Print("T1 - Completed")
-		probe.Completed()
-	}()
-
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
 
@@ -37,6 +32,7 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 	// Make a blocking Recv call
 	done := make(chan bool)
 	go func() {
+		log.Print("T2 - Started")
 		defer func() {
 			log.Print("T2 - Completed")
 			done <- true
@@ -56,6 +52,9 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 		require.True(t, ok, "Unexpected error during read: %s", err.Error())
 		require.Equal(t, serial.PortClosed, portError.Code(), "Unexpected error during read: %s", err.Error())
 	}()
+
+	log.Print("T1 - Started")
+	defer log.Print("T1 - Completed")
 
 	// Try to send a byte each `delay` milliseconds and check if the
 	// total elapsed time is in the expected range (with a `delay` ms margin)
@@ -80,17 +79,13 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 
 func TestDisconnectingPortDetection(t *testing.T) {
 	probe := NewProbe(t, 20*time.Second)
-	defer func() {
-		log.Print("T1 - Completed")
-		probe.Completed()
-	}()
-
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
 
 	// Disconnect target after a small delay
 	done := make(chan bool)
 	go func() {
+		log.Print("T2 - Started")
 		defer func() {
 			log.Print("T2 - Completed")
 			done <- true
@@ -101,6 +96,9 @@ func TestDisconnectingPortDetection(t *testing.T) {
 		log.Printf("T2 - Disconnect target")
 		probe.TurnOffTarget()
 	}()
+
+	log.Print("T1 - Started")
+	defer log.Print("T1 - Completed")
 
 	// Do a blocking Read that should return after the target disconnection
 	log.Printf("T1 - Make a Read call")
@@ -117,13 +115,11 @@ func TestDisconnectingPortDetection(t *testing.T) {
 
 func TestFlushRXSerialBuffer(t *testing.T) {
 	probe := NewProbe(t, 20*time.Second)
-	defer func() {
-		log.Print("T1 - Completed")
-		probe.Completed()
-	}()
-
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
+
+	log.Print("T1 - Started")
+	defer log.Print("T1 - Completed")
 
 	// Send a bunch of data to the Target
 	log.Printf("T1 - Starting echo test and sending 'HELLO!' to the target")
@@ -168,11 +164,6 @@ func TestFlushRXSerialBuffer(t *testing.T) {
 
 func TestModemBitsAndPortSpeedChange(t *testing.T) {
 	probe := NewProbe(t, 20*time.Second)
-	defer func() {
-		log.Print("T1 - Completed")
-		probe.Completed()
-	}()
-
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
 
@@ -193,6 +184,9 @@ func TestModemBitsAndPortSpeedChange(t *testing.T) {
 		require.Equal(t, exDtr, dtr)
 		require.Equal(t, exRts, rts)
 	}
+
+	log.Print("T1 - Started")
+	defer log.Print("T1 - Completed")
 
 	log.Printf("T1 - Set target DTR=1 and RTS=1")
 	require.NoError(t, target.SetDTR(true))
@@ -234,17 +228,13 @@ func parseTargetSerialStatus(buff []byte) (bps int, dtr, rts bool, err error) {
 
 func TestReadTimeout(t *testing.T) {
 	probe := NewProbe(t, 20*time.Second)
-	defer func() {
-		log.Print("T1 - Completed")
-		probe.Completed()
-	}()
-
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
 
 	// Disconnect target after a small delay
 	done := make(chan bool)
 	go func() {
+		log.Print("T2 - Started")
 		defer func() {
 			log.Print("T2 - Completed")
 			done <- true
@@ -255,6 +245,9 @@ func TestReadTimeout(t *testing.T) {
 		log.Printf("T2 - Disconnect target")
 		probe.TurnOffTarget()
 	}()
+
+	log.Print("T1 - Started")
+	defer log.Print("T1 - Completed")
 
 	// Set timeout to 2500 ms
 	timeout := 2500 * time.Millisecond

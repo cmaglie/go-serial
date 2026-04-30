@@ -62,7 +62,11 @@ func NewProbe(t *testing.T, timeout time.Duration) *Probe {
 
 	go probe.testTimeoutHandler()
 	log.Printf("   - Test will timeout in %s", timeout)
-
+	t.Cleanup(func() {
+		probe.end <- true
+		<-probe.ended
+		log.Println("Test ended")
+	})
 	return probe
 }
 
@@ -128,14 +132,4 @@ func (probe *Probe) testTimeoutHandler() {
 	log.Println("PR - Disconnecting Probe")
 	probe.port.Close()
 	probe.ended <- true
-}
-
-// Completed must be called when the test ends before the
-// timeout. This doesn't mean that the test is successful
-// but just that the test ended before the timeout and the
-// used resources can be freed.
-func (probe *Probe) Completed() {
-	probe.end <- true
-	<-probe.ended
-	log.Println("Test ended")
 }
