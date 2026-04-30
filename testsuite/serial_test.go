@@ -30,7 +30,6 @@ func TestConcurrentReadAndWrite(t *testing.T) {
 
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
-	defer target.Close()
 
 	// Try to send while a receive is waiting for data
 	// https://github.com/bugst/go-serial/issues/15
@@ -88,7 +87,6 @@ func TestDisconnectingPortDetection(t *testing.T) {
 
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
-	defer target.Close()
 
 	// Disconnect target after a small delay
 	done := make(chan bool)
@@ -126,7 +124,6 @@ func TestFlushRXSerialBuffer(t *testing.T) {
 
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
-	defer target.Close()
 
 	// Send a bunch of data to the Target
 	log.Printf("T1 - Starting echo test and sending 'HELLO!' to the target")
@@ -178,7 +175,6 @@ func TestModemBitsAndPortSpeedChange(t *testing.T) {
 
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
-	defer target.Close()
 
 	// Modem bit test
 	assertTargetSerialStatus := func(exBps int, exDtr, exRts bool) {
@@ -245,7 +241,6 @@ func TestReadTimeout(t *testing.T) {
 
 	probe.TurnOnTarget()
 	target := probe.ConnectToTarget(t)
-	defer target.Close()
 
 	// Disconnect target after a small delay
 	done := make(chan bool)

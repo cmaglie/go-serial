@@ -108,6 +108,7 @@ func (test *Probe) ConnectToTarget(t *testing.T) serial.Port {
 		port, err = serial.Open(portName, &serial.Mode{})
 	}
 	require.NoError(t, err, "Could not connect to target")
+	t.Cleanup(func() { port.Close() })
 	return port
 }
 
