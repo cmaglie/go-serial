@@ -12,13 +12,6 @@ package enumerator
 // #include <IOKit/usb/IOUSBLib.h>
 // #include <CoreFoundation/CoreFoundation.h>
 // #include <stdlib.h>
-//
-// HRESULT callIOCFPlugin_QueryInterface(IOCFPlugInInterface **plugin, REFIID iid, LPVOID *ppv) {
-//   return (*plugin)->QueryInterface(plugin, iid, ppv);
-// }
-// HRESULT callIOCFPlugin_Release(IOCFPlugInInterface **plugin) {
-//   return (*plugin)->Release(plugin);
-// }
 import "C"
 import (
 	"errors"
@@ -507,18 +500,18 @@ func (me *io_service_t) IOCreatePlugInInterfaceForService() (plugin *IOCFPlugIn,
 // IOCFPlugInInterface
 
 type IOCFPlugIn struct {
-	h **C.IOCFPlugInInterface
+	h unsafe.Pointer
 }
 
 func (me *IOCFPlugIn) iface() *ioCFPlugInInterface {
-	return (*ioCFPlugInInterface)(unsafe.Pointer(*me.h))
+	return (*ioCFPlugInInterface)(*(*unsafe.Pointer)(me.h))
 }
 
 func (me *IOCFPlugIn) QueryIOUSBDeviceInterface() (*IOUSBDevice, error) {
 	var queryInterface func(unsafe.Pointer, uint64, uint64, unsafe.Pointer) hResult
 	purego.RegisterFunc(&queryInterface, me.iface().QueryInterface)
 	device := IOUSBDevice{}
-	result := queryInterface(unsafe.Pointer(me.h), kIOUSBDeviceInterfaceIDLo, kIOUSBDeviceInterfaceIDHi, unsafe.Pointer(&device.h))
+	result := queryInterface(me.h, kIOUSBDeviceInterfaceIDLo, kIOUSBDeviceInterfaceIDHi, unsafe.Pointer(&device.h))
 	if result != sOK {
 		return nil, fmt.Errorf("QueryInterface failed (code %d)", result)
 	}
@@ -528,7 +521,7 @@ func (me *IOCFPlugIn) QueryIOUSBDeviceInterface() (*IOUSBDevice, error) {
 func (me *IOCFPlugIn) Release() {
 	var release func(unsafe.Pointer) uLong
 	purego.RegisterFunc(&release, me.iface().Release)
-	release(unsafe.Pointer(me.h))
+	release(me.h)
 }
 
 // IOUSBDeviceInterface
