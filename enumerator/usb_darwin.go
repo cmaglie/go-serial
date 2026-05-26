@@ -57,6 +57,25 @@ type ioObject uint32
 type ioIterator uint32
 type ioRegistryEntry ioObject
 type ioService ioObject
+type ioUSBDevRequest struct {
+	bmRequestType uint8
+	bRequest      uint8
+	wValue        uint16
+	wIndex        uint16
+	wLength       uint16
+	pData         unsafe.Pointer
+	wLenDone      uint32
+}
+type ioUSBConfigurationDescriptor struct {
+	bLength             uint8
+	bDescriptorType     uint8
+	wTotalLength        uint16
+	bNumInterfaces      uint8
+	bConfigurationValue uint8
+	iConfiguration      uint8
+	bmAttributes        uint8
+	maxPower            uint8
+}
 type cfAllocatorRef uintptr
 type cfIndex int64
 type cfStringEncoding uint32
@@ -70,12 +89,33 @@ type cfDictionaryRef uintptr
 const (
 	kIOMasterPortDefault      machPort         = 0
 	kernSuccess               kernReturn       = 0
+	kUSBIn                    uint8            = 1
+	kUSBStandard              uint8            = 0
+	kUSBDevice                uint8            = 0
+	kUSBRqGetDescriptor       uint8            = 6
+	kUSBStringDesc            uint8            = 3
 	kCFAllocatorDefault       cfAllocatorRef   = 0
 	kCFStringEncodingMacRoman cfStringEncoding = 0
 	kCFStringEncodingUTF8     cfStringEncoding = 0x08000100
 	kCFStringEncodingUTF16LE  cfStringEncoding = 0x14000100
 	kCFNumberSInt16Type       cfNumberType     = 2
 )
+
+func (r *ioUSBDevRequest) toC() C.IOUSBDevRequest {
+	return C.IOUSBDevRequest{
+		bmRequestType: C.UInt8(r.bmRequestType),
+		bRequest:      C.UInt8(r.bRequest),
+		wValue:        C.UInt16(r.wValue),
+		wIndex:        C.UInt16(r.wIndex),
+		wLength:       C.UInt16(r.wLength),
+		pData:         r.pData,
+		wLenDone:      C.UInt32(r.wLenDone),
+	}
+}
+
+func (r *ioUSBDevRequest) copyFromC(c C.IOUSBDevRequest) {
+	r.wLenDone = uint32(c.wLenDone)
+}
 
 var (
 	ioServiceMatching            func(string) cfMutableDictionaryRef
@@ -465,20 +505,22 @@ func (me *IOUSBDevice) GetNumberOfConfigurations() (uint8, error) {
 	return uint8(numConfigs), nil
 }
 
-func (me *IOUSBDevice) GetConfigurationDescriptorPtr(index uint8) (C.IOUSBConfigurationDescriptorPtr, error) {
+func (me *IOUSBDevice) GetConfigurationDescriptorPtr(index uint8) (*ioUSBConfigurationDescriptor, error) {
 	var configDesc C.IOUSBConfigurationDescriptorPtr
 	kr := C.callIOUSBDevice_GetConfigurationDescriptorPtr(me.h, C.UInt8(index), &configDesc)
 	if kr != C.kIOReturnSuccess {
 		return nil, fmt.Errorf("GetConfigurationDescriptorPtr failed (code %d)", kr)
 	}
-	return configDesc, nil
+	return (*ioUSBConfigurationDescriptor)(unsafe.Pointer(configDesc)), nil
 }
 
-func (me *IOUSBDevice) DeviceRequest(request *C.IOUSBDevRequest) error {
-	kr := C.callIOUSBDevice_DeviceRequest(me.h, request)
+func (me *IOUSBDevice) DeviceRequest(request *ioUSBDevRequest) error {
+	cRequest := request.toC()
+	kr := C.callIOUSBDevice_DeviceRequest(me.h, &cRequest)
 	if kr != C.kIOReturnSuccess {
 		return fmt.Errorf("DeviceRequest failed (code %d)", kr)
 	}
+	request.copyFromC(cRequest)
 	return nil
 }
 
@@ -531,10 +573,10 @@ func RetrieveUSBConfigurationString(service io_service_t) (string, error) {
 	}
 	buffer := unsafe.Slice((*uint8)(pData), 1024)
 	defer C.free(pData)
-	request1 := C.IOUSBDevRequest{
-		bmRequestType: (C.kUSBIn << 7) | (C.kUSBStandard << 5) | C.kUSBDevice,
-		bRequest:      C.kUSBRqGetDescriptor,
-		wValue:        C.UInt16(C.kUSBStringDesc << 8),
+	request1 := ioUSBDevRequest{
+		bmRequestType: (kUSBIn << 7) | (kUSBStandard << 5) | kUSBDevice,
+		bRequest:      kUSBRqGetDescriptor,
+		wValue:        uint16(kUSBStringDesc) << 8,
 		wIndex:        0,
 		wLength:       1024,
 		pData:         pData,
@@ -547,11 +589,11 @@ func RetrieveUSBConfigurationString(service io_service_t) (string, error) {
 		langID = uint16(buffer[2]) | (uint16(buffer[3]) << 8)
 	}
 
-	request2 := C.IOUSBDevRequest{
-		bmRequestType: (C.kUSBIn << 7) | (C.kUSBStandard << 5) | C.kUSBDevice,
-		bRequest:      C.kUSBRqGetDescriptor,
-		wValue:        C.UInt16(C.kUSBStringDesc<<8) | C.UInt16(stringIndex),
-		wIndex:        C.UInt16(langID),
+	request2 := ioUSBDevRequest{
+		bmRequestType: (kUSBIn << 7) | (kUSBStandard << 5) | kUSBDevice,
+		bRequest:      kUSBRqGetDescriptor,
+		wValue:        uint16(kUSBStringDesc)<<8 | uint16(stringIndex),
+		wIndex:        uint16(langID),
 		wLength:       1024,
 		pData:         pData,
 	}
