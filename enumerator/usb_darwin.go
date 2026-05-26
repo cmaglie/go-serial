@@ -130,6 +130,8 @@ var (
 	ioIteratorReset              func(ioIterator) kernReturn
 	ioIteratorNext               func(ioIterator) ioObject
 	cfRelease                    func(cfTypeRef)
+	cfStringGetLength            func(cfStringRef) cfIndex
+	cfStringGetMaximumSize       func(cfIndex, cfStringEncoding) cfIndex
 )
 
 func init() {
@@ -137,6 +139,8 @@ func init() {
 	ioKit := mustDlopen("/System/Library/Frameworks/IOKit.framework/IOKit")
 
 	purego.RegisterLibFunc(&cfRelease, coreFoundation, "CFRelease")
+	purego.RegisterLibFunc(&cfStringGetLength, coreFoundation, "CFStringGetLength")
+	purego.RegisterLibFunc(&cfStringGetMaximumSize, coreFoundation, "CFStringGetMaximumSizeForEncoding")
 	purego.RegisterLibFunc(&ioServiceMatching, ioKit, "IOServiceMatching")
 	purego.RegisterLibFunc(&ioServiceGetMatchingServices, ioKit, "IOServiceGetMatchingServices")
 	purego.RegisterLibFunc(&ioObjectRelease, ioKit, "IOObjectRelease")
@@ -292,11 +296,11 @@ func cfStringCreateWithBytes(data unsafe.Pointer, len uint32, encoding cfStringE
 }
 
 func (ref cfStringRef) GetLength() uint32 {
-	return uint32(C.CFStringGetLength(C.CFStringRef(ref)))
+	return uint32(cfStringGetLength(ref))
 }
 
 func (ref cfStringRef) GetMaximumSizeForEncoding(encoding cfStringEncoding) uint32 {
-	return uint32(C.CFStringGetMaximumSizeForEncoding(C.CFIndex(cfIndex(ref.GetLength())), C.CFStringEncoding(encoding)))
+	return uint32(cfStringGetMaximumSize(cfIndex(ref.GetLength()), encoding))
 }
 
 func (ref cfStringRef) GetGoString() (string, bool) {
