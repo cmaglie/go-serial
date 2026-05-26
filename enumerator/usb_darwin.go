@@ -57,6 +57,8 @@ type ioObject uint32
 type ioIterator uint32
 type ioRegistryEntry ioObject
 type ioService ioObject
+type cfAllocatorRef uintptr
+type cfIndex int64
 type cfStringEncoding uint32
 type cfNumberType int32
 type cfStringRef uintptr
@@ -67,6 +69,7 @@ type cfDictionaryRef uintptr
 const (
 	kIOMasterPortDefault      machPort         = 0
 	kernSuccess               kernReturn       = 0
+	kCFAllocatorDefault       cfAllocatorRef   = 0
 	kCFStringEncodingMacRoman cfStringEncoding = 0
 	kCFStringEncodingUTF8     cfStringEncoding = 0x08000100
 	kCFStringEncodingUTF16LE  cfStringEncoding = 0x14000100
@@ -232,11 +235,11 @@ func getMatchingServices(matcher cfMutableDictionaryRef) (io_iterator_t, error) 
 func cfStringCreateWithString(s string) cfStringRef {
 	c := C.CString(s)
 	defer C.free(unsafe.Pointer(c))
-	return cfStringRef(C.CFStringCreateWithCString(C.kCFAllocatorDefault, c, C.CFStringEncoding(kCFStringEncodingMacRoman)))
+	return cfStringRef(C.CFStringCreateWithCString(C.CFAllocatorRef(kCFAllocatorDefault), c, C.CFStringEncoding(kCFStringEncodingMacRoman)))
 }
 
 func cfStringCreateWithBytes(data unsafe.Pointer, len uint32, encoding cfStringEncoding) (cfStringRef, bool) {
-	str := C.CFStringCreateWithBytes(C.kCFAllocatorDefault, (*C.uint8_t)(data), C.CFIndex(len), C.CFStringEncoding(encoding), C.FALSE)
+	str := C.CFStringCreateWithBytes(C.CFAllocatorRef(kCFAllocatorDefault), (*C.uint8_t)(data), C.CFIndex(cfIndex(len)), C.CFStringEncoding(encoding), C.FALSE)
 	return cfStringRef(str), str != 0
 }
 
@@ -245,7 +248,7 @@ func (ref cfStringRef) GetLength() uint32 {
 }
 
 func (ref cfStringRef) GetMaximumSizeForEncoding(encoding cfStringEncoding) uint32 {
-	return uint32(C.CFStringGetMaximumSizeForEncoding(C.CFIndex(ref.GetLength()), C.CFStringEncoding(encoding)))
+	return uint32(C.CFStringGetMaximumSizeForEncoding(C.CFIndex(cfIndex(ref.GetLength())), C.CFStringEncoding(encoding)))
 }
 
 func (ref cfStringRef) GetGoString() (string, bool) {
@@ -255,7 +258,7 @@ func (ref cfStringRef) GetGoString() (string, bool) {
 		return "", false
 	}
 	defer C.free(buff)
-	if C.CFStringGetCString(C.CFStringRef(ref), (*C.char)(buff), C.CFIndex(maxSize), C.CFStringEncoding(kCFStringEncodingUTF8)) == C.false {
+	if C.CFStringGetCString(C.CFStringRef(ref), (*C.char)(buff), C.CFIndex(cfIndex(maxSize)), C.CFStringEncoding(kCFStringEncodingUTF8)) == C.false {
 		return "", false
 	}
 	return C.GoString((*C.char)(buff)), true
@@ -287,7 +290,7 @@ func (me *io_registry_entry_t) GetParent(plane string) (io_registry_entry_t, err
 func (me *io_registry_entry_t) CreateCFProperty(key string) (cfTypeRef, error) {
 	k := cfStringCreateWithString(key)
 	defer k.Release()
-	property := C.IORegistryEntryCreateCFProperty(C.io_registry_entry_t(ioObject(*me)), C.CFStringRef(k), C.kCFAllocatorDefault, 0)
+	property := C.IORegistryEntryCreateCFProperty(C.io_registry_entry_t(ioObject(*me)), C.CFStringRef(k), C.CFAllocatorRef(kCFAllocatorDefault), 0)
 	if property == 0 {
 		return 0, errors.New("Property not found: " + key)
 	}
