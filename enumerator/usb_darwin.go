@@ -136,6 +136,7 @@ var (
 	cfStringGetCStringPtr         func(cfStringRef, cfStringEncoding) *byte
 	cfStringCreateWithCString     func(cfAllocatorRef, *byte, cfStringEncoding) cfStringRef
 	cfStringCreateWithBytesFunc   func(cfAllocatorRef, *uint8, cfIndex, cfStringEncoding, uint8) cfStringRef
+	cfNumberGetValue              func(cfNumberRef, cfNumberType, unsafe.Pointer) uint8
 	ioRegistryEntryCreateProperty func(ioRegistryEntry, cfStringRef, cfAllocatorRef, uint32) cfTypeRef
 )
 
@@ -150,6 +151,7 @@ func init() {
 	purego.RegisterLibFunc(&cfStringGetCStringPtr, coreFoundation, "CFStringGetCStringPtr")
 	purego.RegisterLibFunc(&cfStringCreateWithCString, coreFoundation, "CFStringCreateWithCString")
 	purego.RegisterLibFunc(&cfStringCreateWithBytesFunc, coreFoundation, "CFStringCreateWithBytes")
+	purego.RegisterLibFunc(&cfNumberGetValue, coreFoundation, "CFNumberGetValue")
 	purego.RegisterLibFunc(&ioRegistryEntryCreateProperty, ioKit, "IORegistryEntryCreateCFProperty")
 	purego.RegisterLibFunc(&ioServiceMatching, ioKit, "IOServiceMatching")
 	purego.RegisterLibFunc(&ioServiceGetMatchingServices, ioKit, "IOServiceGetMatchingServices")
@@ -393,7 +395,7 @@ func (me *io_registry_entry_t) GetIntProperty(key string, intType cfNumberType) 
 	}
 	defer property.Release()
 	var res int
-	if C.CFNumberGetValue(C.CFNumberRef(cfNumberRef(property)), C.CFNumberType(intType), unsafe.Pointer(&res)) != C.true {
+	if cfNumberGetValue(cfNumberRef(property), intType, unsafe.Pointer(&res)) == 0 {
 		return res, fmt.Errorf("property '%s' can't be converted or has been truncated", key)
 	}
 	return res, nil
