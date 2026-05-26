@@ -57,6 +57,8 @@ type ioObject uint32
 type ioIterator uint32
 type ioRegistryEntry ioObject
 type ioService ioObject
+type cfStringRef uintptr
+type cfTypeRef uintptr
 type cfMutableDictionaryRef uintptr
 type cfDictionaryRef uintptr
 
@@ -221,10 +223,6 @@ func getMatchingServices(matcher cfMutableDictionaryRef) (io_iterator_t, error) 
 	return io_iterator_t(i), nil
 }
 
-// CFStringRef
-
-type cfStringRef C.CFStringRef
-
 func cfStringCreateWithString(s string) cfStringRef {
 	c := C.CString(s)
 	defer C.free(unsafe.Pointer(c))
@@ -260,10 +258,6 @@ func (ref cfStringRef) GetGoString() (string, bool) {
 func (ref cfStringRef) Release() {
 	C.CFRelease(C.CFTypeRef(ref))
 }
-
-// CFTypeRef
-
-type cfTypeRef C.CFTypeRef
 
 func (ref cfTypeRef) Release() {
 	C.CFRelease(C.CFTypeRef(ref))
