@@ -196,6 +196,17 @@ func mustDlopen(path string) uintptr {
 	return handle
 }
 
+func cStringToGo(ptr *byte) string {
+	if ptr == nil {
+		return ""
+	}
+	n := 0
+	for *(*byte)(unsafe.Add(unsafe.Pointer(ptr), n)) != 0 {
+		n++
+	}
+	return unsafe.String(ptr, n)
+}
+
 func nativeGetDetailedPortsList() ([]*PortDetails, error) {
 	var ports []*PortDetails
 
@@ -349,7 +360,7 @@ func (ref cfStringRef) GetGoString() (string, bool) {
 	if cfStringGetCString(ref, (*byte)(buff), cfIndex(maxSize), kCFStringEncodingUTF8) == 0 {
 		return "", false
 	}
-	return C.GoString((*C.char)(buff)), true
+	return cStringToGo((*byte)(buff)), true
 }
 
 func (ref cfStringRef) Release() {
@@ -391,7 +402,7 @@ func (me *io_registry_entry_t) GetStringProperty(key string) (string, error) {
 	defer property.Release()
 
 	if ptr := cfStringGetCStringPtr(cfStringRef(property), 0); ptr != nil {
-		return C.GoString((*C.char)(unsafe.Pointer(ptr))), nil
+		return cStringToGo(ptr), nil
 	}
 	// in certain circumstances CFStringGetCStringPtr may return NULL
 	// and we must retrieve the string by copy
@@ -399,7 +410,7 @@ func (me *io_registry_entry_t) GetStringProperty(key string) (string, error) {
 	if cfStringGetCString(cfStringRef(property), &buff[0], 1024, 0) == 0 {
 		return "", fmt.Errorf("property '%s' can't be converted", key)
 	}
-	return C.GoString((*C.char)(unsafe.Pointer(&buff[0]))), nil
+	return cStringToGo(&buff[0]), nil
 }
 
 func (me *io_registry_entry_t) GetUSBConfigurationString() (string, error) {
@@ -430,7 +441,7 @@ func (me *io_registry_entry_t) Release() {
 func (me *io_registry_entry_t) GetClass() string {
 	class := make([]byte, 1024)
 	ioObjectGetClass(ioObject(*me), &class[0])
-	return C.GoString((*C.char)(unsafe.Pointer(&class[0])))
+	return cStringToGo(&class[0])
 }
 
 // io_iterator_t
@@ -470,7 +481,7 @@ func (me *io_object_t) Release() {
 func (me *io_object_t) GetClass() string {
 	class := make([]byte, 1024)
 	ioObjectGetClass(ioObject(*me), &class[0])
-	return C.GoString((*C.char)(unsafe.Pointer(&class[0])))
+	return cStringToGo(&class[0])
 }
 
 // io_service_t
