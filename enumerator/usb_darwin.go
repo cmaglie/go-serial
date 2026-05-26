@@ -19,28 +19,6 @@ package enumerator
 // HRESULT callIOCFPlugin_Release(IOCFPlugInInterface **plugin) {
 //   return (*plugin)->Release(plugin);
 // }
-//
-// IOReturn callIOUSBDevice_USBDeviceOpen(IOUSBDeviceInterface **device) {
-//   return (*device)->USBDeviceOpen(device);
-// }
-// IOReturn callIOUSBDevice_USBDeviceClose(IOUSBDeviceInterface **device) {
-//   return (*device)->USBDeviceClose(device);
-// }
-// ULONG callIOUSBDdevice_Release(IOUSBDeviceInterface **device) {
-//   return (*device)->Release(device);
-// }
-// IOReturn callIOUSBDevice_GetConfiguration(IOUSBDeviceInterface **device, UInt8 *config) {
-//   return (*device)->GetConfiguration(device, config);
-// }
-// IOReturn callIOUSBDevice_GetNumberOfConfigurations(IOUSBDeviceInterface **device, UInt8 *numConfigs) {
-//   return (*device)->GetNumberOfConfigurations(device, numConfigs);
-// }
-// IOReturn callIOUSBDevice_GetConfigurationDescriptorPtr(IOUSBDeviceInterface **device, UInt8 index, IOUSBConfigurationDescriptorPtr *configDesc) {
-//   return (*device)->GetConfigurationDescriptorPtr(device, index, configDesc);
-// }
-// IOReturn callIOUSBDevice_DeviceRequest(IOUSBDeviceInterface **device, IOUSBDevRequest *request) {
-//   return (*device)->DeviceRequest(device, request);
-// }
 import "C"
 import (
 	"errors"
@@ -55,10 +33,29 @@ type machPort uint32
 type kernReturn int32
 type ioReturn int32
 type hResult int32
+type uLong uint32
 type ioObject uint32
 type ioIterator uint32
 type ioRegistryEntry ioObject
 type ioService ioObject
+type cfUUIDBytes struct {
+	byte0  uint8
+	byte1  uint8
+	byte2  uint8
+	byte3  uint8
+	byte4  uint8
+	byte5  uint8
+	byte6  uint8
+	byte7  uint8
+	byte8  uint8
+	byte9  uint8
+	byte10 uint8
+	byte11 uint8
+	byte12 uint8
+	byte13 uint8
+	byte14 uint8
+	byte15 uint8
+}
 type ioUSBDevRequest struct {
 	bmRequestType uint8
 	bRequest      uint8
@@ -88,6 +85,35 @@ type cfStringRef uintptr
 type cfTypeRef uintptr
 type cfMutableDictionaryRef uintptr
 type cfDictionaryRef uintptr
+type ioUSBDeviceInterface struct {
+	reserved                      uintptr
+	QueryInterface                uintptr
+	AddRef                        uintptr
+	Release                       uintptr
+	CreateDeviceAsyncEventSource  uintptr
+	GetDeviceAsyncEventSource     uintptr
+	CreateDeviceAsyncPort         uintptr
+	GetDeviceAsyncPort            uintptr
+	USBDeviceOpen                 uintptr
+	USBDeviceClose                uintptr
+	GetDeviceClass                uintptr
+	GetDeviceSubClass             uintptr
+	GetDeviceProtocol             uintptr
+	GetDeviceVendor               uintptr
+	GetDeviceProduct              uintptr
+	GetDeviceReleaseNumber        uintptr
+	GetDeviceAddress              uintptr
+	GetDeviceBusPowerAvailable    uintptr
+	GetDeviceSpeed                uintptr
+	GetNumberOfConfigurations     uintptr
+	GetLocationID                 uintptr
+	GetConfigurationDescriptorPtr uintptr
+	GetConfiguration              uintptr
+	SetConfiguration              uintptr
+	GetBusFrameNumber             uintptr
+	ResetDevice                   uintptr
+	DeviceRequest                 uintptr
+}
 
 const (
 	kIOMasterPortDefault      machPort         = 0
@@ -106,20 +132,11 @@ const (
 	kCFNumberSInt16Type       cfNumberType     = 2
 )
 
-func (r *ioUSBDevRequest) toC() C.IOUSBDevRequest {
-	return C.IOUSBDevRequest{
-		bmRequestType: C.UInt8(r.bmRequestType),
-		bRequest:      C.UInt8(r.bRequest),
-		wValue:        C.UInt16(r.wValue),
-		wIndex:        C.UInt16(r.wIndex),
-		wLength:       C.UInt16(r.wLength),
-		pData:         r.pData,
-		wLenDone:      C.UInt32(r.wLenDone),
-	}
-}
-
-func (r *ioUSBDevRequest) copyFromC(c C.IOUSBDevRequest) {
-	r.wLenDone = uint32(c.wLenDone)
+var kIOUSBDeviceInterfaceID = cfUUIDBytes{
+	byte0: 0x5c, byte1: 0x81, byte2: 0x87, byte3: 0xd0,
+	byte4: 0x9e, byte5: 0xf3, byte6: 0x11, byte7: 0xd4,
+	byte8: 0x8b, byte9: 0x45, byte10: 0x00, byte11: 0x0a,
+	byte12: 0x27, byte13: 0x05, byte14: 0x28, byte15: 0x61,
 }
 
 var (
@@ -488,7 +505,7 @@ func (me *IOCFPlugIn) QueryIOUSBDeviceInterface() (*IOUSBDevice, error) {
 	if result != sOK {
 		return nil, fmt.Errorf("QueryInterface failed (code %d)", result)
 	}
-	return &IOUSBDevice{h: device}, nil
+	return &IOUSBDevice{h: unsafe.Pointer(device)}, nil
 }
 
 func (me *IOCFPlugIn) Release() {
@@ -498,11 +515,17 @@ func (me *IOCFPlugIn) Release() {
 // IOUSBDeviceInterface
 
 type IOUSBDevice struct {
-	h **C.IOUSBDeviceInterface
+	h unsafe.Pointer
+}
+
+func (me *IOUSBDevice) iface() *ioUSBDeviceInterface {
+	return (*ioUSBDeviceInterface)(*(*unsafe.Pointer)(me.h))
 }
 
 func (me *IOUSBDevice) USBDeviceOpen() error {
-	kr := ioReturn(C.callIOUSBDevice_USBDeviceOpen(me.h))
+	var usbDeviceOpen func(unsafe.Pointer) ioReturn
+	purego.RegisterFunc(&usbDeviceOpen, me.iface().USBDeviceOpen)
+	kr := usbDeviceOpen(me.h)
 	if kr != kIOReturnSuccess {
 		return fmt.Errorf("USBDeviceOpen failed (code %d)", kr)
 	}
@@ -510,7 +533,9 @@ func (me *IOUSBDevice) USBDeviceOpen() error {
 }
 
 func (me *IOUSBDevice) USBDeviceClose() error {
-	kr := ioReturn(C.callIOUSBDevice_USBDeviceClose(me.h))
+	var usbDeviceClose func(unsafe.Pointer) ioReturn
+	purego.RegisterFunc(&usbDeviceClose, me.iface().USBDeviceClose)
+	kr := usbDeviceClose(me.h)
 	if kr != kIOReturnSuccess {
 		return fmt.Errorf("USBDeviceClose failed (code %d)", kr)
 	}
@@ -518,30 +543,38 @@ func (me *IOUSBDevice) USBDeviceClose() error {
 }
 
 func (me *IOUSBDevice) Release() {
-	C.callIOUSBDdevice_Release(me.h)
+	var release func(unsafe.Pointer) uLong
+	purego.RegisterFunc(&release, me.iface().Release)
+	release(me.h)
 }
 
 func (me *IOUSBDevice) GetConfiguration() (uint8, error) {
-	var config C.UInt8
-	kr := ioReturn(C.callIOUSBDevice_GetConfiguration(me.h, &config))
+	var getConfiguration func(unsafe.Pointer, *uint8) ioReturn
+	purego.RegisterFunc(&getConfiguration, me.iface().GetConfiguration)
+	var config uint8
+	kr := getConfiguration(me.h, &config)
 	if kr != kIOReturnSuccess {
 		return 0, fmt.Errorf("GetConfiguration failed (code %d)", kr)
 	}
-	return uint8(config), nil
+	return config, nil
 }
 
 func (me *IOUSBDevice) GetNumberOfConfigurations() (uint8, error) {
-	var numConfigs C.UInt8
-	kr := ioReturn(C.callIOUSBDevice_GetNumberOfConfigurations(me.h, &numConfigs))
+	var getNumberOfConfigurations func(unsafe.Pointer, *uint8) ioReturn
+	purego.RegisterFunc(&getNumberOfConfigurations, me.iface().GetNumberOfConfigurations)
+	var numConfigs uint8
+	kr := getNumberOfConfigurations(me.h, &numConfigs)
 	if kr != kIOReturnSuccess {
 		return 0, fmt.Errorf("GetNumberOfConfigurations failed (code %d)", kr)
 	}
-	return uint8(numConfigs), nil
+	return numConfigs, nil
 }
 
 func (me *IOUSBDevice) GetConfigurationDescriptorPtr(index uint8) (*ioUSBConfigurationDescriptor, error) {
-	var configDesc C.IOUSBConfigurationDescriptorPtr
-	kr := ioReturn(C.callIOUSBDevice_GetConfigurationDescriptorPtr(me.h, C.UInt8(index), &configDesc))
+	var getConfigurationDescriptorPtr func(unsafe.Pointer, uint8, *unsafe.Pointer) ioReturn
+	purego.RegisterFunc(&getConfigurationDescriptorPtr, me.iface().GetConfigurationDescriptorPtr)
+	var configDesc unsafe.Pointer
+	kr := getConfigurationDescriptorPtr(me.h, index, &configDesc)
 	if kr != kIOReturnSuccess {
 		return nil, fmt.Errorf("GetConfigurationDescriptorPtr failed (code %d)", kr)
 	}
@@ -549,12 +582,12 @@ func (me *IOUSBDevice) GetConfigurationDescriptorPtr(index uint8) (*ioUSBConfigu
 }
 
 func (me *IOUSBDevice) DeviceRequest(request *ioUSBDevRequest) error {
-	cRequest := request.toC()
-	kr := ioReturn(C.callIOUSBDevice_DeviceRequest(me.h, &cRequest))
+	var deviceRequest func(unsafe.Pointer, *ioUSBDevRequest) ioReturn
+	purego.RegisterFunc(&deviceRequest, me.iface().DeviceRequest)
+	kr := deviceRequest(me.h, request)
 	if kr != kIOReturnSuccess {
 		return fmt.Errorf("DeviceRequest failed (code %d)", kr)
 	}
-	request.copyFromC(cRequest)
 	return nil
 }
 
