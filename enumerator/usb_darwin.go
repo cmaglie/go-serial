@@ -133,6 +133,7 @@ var (
 	cfStringGetLength            func(cfStringRef) cfIndex
 	cfStringGetMaximumSize       func(cfIndex, cfStringEncoding) cfIndex
 	cfStringGetCString           func(cfStringRef, *byte, cfIndex, cfStringEncoding) uint8
+	cfStringGetCStringPtr        func(cfStringRef, cfStringEncoding) *byte
 )
 
 func init() {
@@ -143,6 +144,7 @@ func init() {
 	purego.RegisterLibFunc(&cfStringGetLength, coreFoundation, "CFStringGetLength")
 	purego.RegisterLibFunc(&cfStringGetMaximumSize, coreFoundation, "CFStringGetMaximumSizeForEncoding")
 	purego.RegisterLibFunc(&cfStringGetCString, coreFoundation, "CFStringGetCString")
+	purego.RegisterLibFunc(&cfStringGetCStringPtr, coreFoundation, "CFStringGetCStringPtr")
 	purego.RegisterLibFunc(&ioServiceMatching, ioKit, "IOServiceMatching")
 	purego.RegisterLibFunc(&ioServiceGetMatchingServices, ioKit, "IOServiceGetMatchingServices")
 	purego.RegisterLibFunc(&ioObjectRelease, ioKit, "IOObjectRelease")
@@ -358,8 +360,8 @@ func (me *io_registry_entry_t) GetStringProperty(key string) (string, error) {
 	}
 	defer property.Release()
 
-	if ptr := C.CFStringGetCStringPtr(C.CFStringRef(property), 0); ptr != nil {
-		return C.GoString(ptr), nil
+	if ptr := cfStringGetCStringPtr(cfStringRef(property), 0); ptr != nil {
+		return C.GoString((*C.char)(unsafe.Pointer(ptr))), nil
 	}
 	// in certain circumstances CFStringGetCStringPtr may return NULL
 	// and we must retrieve the string by copy
