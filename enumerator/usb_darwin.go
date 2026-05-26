@@ -25,24 +25,6 @@ type ioObject uint32
 type ioIterator uint32
 type ioRegistryEntry ioObject
 type ioService ioObject
-type cfUUIDBytes struct {
-	byte0  uint8
-	byte1  uint8
-	byte2  uint8
-	byte3  uint8
-	byte4  uint8
-	byte5  uint8
-	byte6  uint8
-	byte7  uint8
-	byte8  uint8
-	byte9  uint8
-	byte10 uint8
-	byte11 uint8
-	byte12 uint8
-	byte13 uint8
-	byte14 uint8
-	byte15 uint8
-}
 type ioUSBDevRequest struct {
 	bmRequestType uint8
 	bRequest      uint8
@@ -128,34 +110,16 @@ const (
 	kCFNumberSInt16Type       cfNumberType     = 2
 )
 
-var kIOUSBDeviceInterfaceID = cfUUIDBytes{
-	byte0: 0x5c, byte1: 0x81, byte2: 0x87, byte3: 0xd0,
-	byte4: 0x9e, byte5: 0xf3, byte6: 0x11, byte7: 0xd4,
-	byte8: 0x8b, byte9: 0x45, byte10: 0x00, byte11: 0x0a,
-	byte12: 0x27, byte13: 0x05, byte14: 0x28, byte15: 0x61,
-}
-
 const (
 	// QueryInterface expects REFIID by value. Registering the call with two
 	// uint64 chunks matches the 16-byte UUID payload on Darwin arm64 more
 	// reliably than passing the struct directly.
-	kIOUSBDeviceInterfaceIDLo uint64 = 0xd411f39ed087815c
-	kIOUSBDeviceInterfaceIDHi uint64 = 0x612805270a00458b
-)
-
-var (
-	kIOUSBDeviceUserClientTypeID = cfUUIDBytes{
-		byte0: 0x9d, byte1: 0xc7, byte2: 0xb7, byte3: 0x80,
-		byte4: 0x9e, byte5: 0xc0, byte6: 0x11, byte7: 0xd4,
-		byte8: 0xa5, byte9: 0x4f, byte10: 0x00, byte11: 0x0a,
-		byte12: 0x27, byte13: 0x05, byte14: 0x28, byte15: 0x61,
-	}
-	kIOCFPlugInInterfaceID = cfUUIDBytes{
-		byte0: 0xc2, byte1: 0x44, byte2: 0xe8, byte3: 0x58,
-		byte4: 0x10, byte5: 0x9c, byte6: 0x11, byte7: 0xd4,
-		byte8: 0x91, byte9: 0xd4, byte10: 0x00, byte11: 0x50,
-		byte12: 0xe4, byte13: 0xc6, byte14: 0x42, byte15: 0x6f,
-	}
+	kIOUSBDeviceInterfaceIDLo      uint64 = 0xd411f39ed087815c
+	kIOUSBDeviceInterfaceIDHi      uint64 = 0x612805270a00458b
+	kIOUSBDeviceUserClientTypeIDLo uint64 = 0xd411c09e80b7c79d
+	kIOUSBDeviceUserClientTypeIDHi uint64 = 0x612805270a004fa5
+	kIOCFPlugInInterfaceIDLo       uint64 = 0xd4119c1058e844c2
+	kIOCFPlugInInterfaceIDHi       uint64 = 0x6f42c6e45000d491
 )
 
 var (
@@ -206,18 +170,8 @@ func init() {
 	purego.RegisterLibFunc(&ioIteratorReset, ioKit, "IOIteratorReset")
 	purego.RegisterLibFunc(&ioIteratorNext, ioKit, "IOIteratorNext")
 
-	ioUSBDeviceUserClientTypeID = cfUUIDGetConstant(kCFAllocatorDefault,
-		kIOUSBDeviceUserClientTypeID.byte0, kIOUSBDeviceUserClientTypeID.byte1, kIOUSBDeviceUserClientTypeID.byte2, kIOUSBDeviceUserClientTypeID.byte3,
-		kIOUSBDeviceUserClientTypeID.byte4, kIOUSBDeviceUserClientTypeID.byte5, kIOUSBDeviceUserClientTypeID.byte6, kIOUSBDeviceUserClientTypeID.byte7,
-		kIOUSBDeviceUserClientTypeID.byte8, kIOUSBDeviceUserClientTypeID.byte9, kIOUSBDeviceUserClientTypeID.byte10, kIOUSBDeviceUserClientTypeID.byte11,
-		kIOUSBDeviceUserClientTypeID.byte12, kIOUSBDeviceUserClientTypeID.byte13, kIOUSBDeviceUserClientTypeID.byte14, kIOUSBDeviceUserClientTypeID.byte15,
-	)
-	ioCFPlugInInterfaceID = cfUUIDGetConstant(kCFAllocatorDefault,
-		kIOCFPlugInInterfaceID.byte0, kIOCFPlugInInterfaceID.byte1, kIOCFPlugInInterfaceID.byte2, kIOCFPlugInInterfaceID.byte3,
-		kIOCFPlugInInterfaceID.byte4, kIOCFPlugInInterfaceID.byte5, kIOCFPlugInInterfaceID.byte6, kIOCFPlugInInterfaceID.byte7,
-		kIOCFPlugInInterfaceID.byte8, kIOCFPlugInInterfaceID.byte9, kIOCFPlugInInterfaceID.byte10, kIOCFPlugInInterfaceID.byte11,
-		kIOCFPlugInInterfaceID.byte12, kIOCFPlugInInterfaceID.byte13, kIOCFPlugInInterfaceID.byte14, kIOCFPlugInInterfaceID.byte15,
-	)
+	ioUSBDeviceUserClientTypeID = cfUUIDGetConstantByWords(kCFAllocatorDefault, kIOUSBDeviceUserClientTypeIDLo, kIOUSBDeviceUserClientTypeIDHi)
+	ioCFPlugInInterfaceID = cfUUIDGetConstantByWords(kCFAllocatorDefault, kIOCFPlugInInterfaceIDLo, kIOCFPlugInInterfaceIDHi)
 }
 
 func mustDlopen(path string) uintptr {
@@ -240,6 +194,18 @@ func cStringToGo(ptr *byte) string {
 	// backed by temporary C or stack-managed buffers, so returning an alias would
 	// produce corrupted strings once that storage is reused.
 	return string(unsafe.Slice(ptr, n))
+}
+
+func cfUUIDGetConstantByWords(alloc cfAllocatorRef, lo, hi uint64) cfUUIDRef {
+	// CFUUIDGetConstantUUIDWithBytes is a real 16-UInt8 C entry point, so unlike
+	// QueryInterface we still have to fan the UUID back out to individual byte
+	// arguments at the ABI boundary.
+	return cfUUIDGetConstant(alloc,
+		uint8(lo), uint8(lo>>8), uint8(lo>>16), uint8(lo>>24),
+		uint8(lo>>32), uint8(lo>>40), uint8(lo>>48), uint8(lo>>56),
+		uint8(hi), uint8(hi>>8), uint8(hi>>16), uint8(hi>>24),
+		uint8(hi>>32), uint8(hi>>40), uint8(hi>>48), uint8(hi>>56),
+	)
 }
 
 func nativeGetDetailedPortsList() ([]*PortDetails, error) {
