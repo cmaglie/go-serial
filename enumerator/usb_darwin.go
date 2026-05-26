@@ -384,15 +384,11 @@ func (ref cfStringRef) GetMaximumSizeForEncoding(encoding cfStringEncoding) uint
 
 func (ref cfStringRef) GetGoString() (string, bool) {
 	maxSize := ref.GetMaximumSizeForEncoding(kCFStringEncodingUTF8) + 1
-	buff := C.malloc(C.size_t(maxSize))
-	if buff == nil {
+	buff := make([]byte, maxSize)
+	if cfStringGetCString(ref, &buff[0], cfIndex(maxSize), kCFStringEncodingUTF8) == 0 {
 		return "", false
 	}
-	defer C.free(buff)
-	if cfStringGetCString(ref, (*byte)(buff), cfIndex(maxSize), kCFStringEncodingUTF8) == 0 {
-		return "", false
-	}
-	return cStringToGo((*byte)(buff)), true
+	return cStringToGo(&buff[0]), true
 }
 
 func (ref cfStringRef) Release() {
