@@ -53,6 +53,8 @@ import (
 
 type machPort uint32
 type kernReturn int32
+type ioReturn int32
+type hResult int32
 type ioObject uint32
 type ioIterator uint32
 type ioRegistryEntry ioObject
@@ -89,6 +91,8 @@ type cfDictionaryRef uintptr
 const (
 	kIOMasterPortDefault      machPort         = 0
 	kernSuccess               kernReturn       = 0
+	kIOReturnSuccess          ioReturn         = 0
+	sOK                       hResult          = 0
 	kUSBIn                    uint8            = 1
 	kUSBStandard              uint8            = 0
 	kUSBDevice                uint8            = 0
@@ -435,8 +439,8 @@ type io_service_t ioService
 func (me *io_service_t) IOCreatePlugInInterfaceForService() (plugin *IOCFPlugIn, score int32, err error) {
 	res := IOCFPlugIn{}
 	var s C.SInt32
-	kr := C.IOCreatePlugInInterfaceForService(C.io_service_t(ioObject(*me)), C.kIOUSBDeviceUserClientTypeID, C.kIOCFPlugInInterfaceID, &res.h, &s)
-	if kr != C.kIOReturnSuccess || res.h == nil {
+	kr := ioReturn(C.IOCreatePlugInInterfaceForService(C.io_service_t(ioObject(*me)), C.kIOUSBDeviceUserClientTypeID, C.kIOCFPlugInInterfaceID, &res.h, &s))
+	if kr != kIOReturnSuccess || res.h == nil {
 		return nil, 0, fmt.Errorf("IOCreatePlugInInterfaceForService failed (code %d)", kr)
 	}
 	return &res, int32(s), nil
@@ -450,8 +454,8 @@ type IOCFPlugIn struct {
 
 func (me *IOCFPlugIn) QueryIOUSBDeviceInterface() (*IOUSBDevice, error) {
 	var device **C.IOUSBDeviceInterface
-	result := C.callIOCFPlugin_QueryInterface(me.h, C.CFUUIDGetUUIDBytes(C.kIOUSBDeviceInterfaceID), (*C.LPVOID)(unsafe.Pointer(&device)))
-	if result != C.S_OK {
+	result := hResult(C.callIOCFPlugin_QueryInterface(me.h, C.CFUUIDGetUUIDBytes(C.kIOUSBDeviceInterfaceID), (*C.LPVOID)(unsafe.Pointer(&device))))
+	if result != sOK {
 		return nil, fmt.Errorf("QueryInterface failed (code %d)", result)
 	}
 	return &IOUSBDevice{h: device}, nil
@@ -468,16 +472,16 @@ type IOUSBDevice struct {
 }
 
 func (me *IOUSBDevice) USBDeviceOpen() error {
-	kr := C.callIOUSBDevice_USBDeviceOpen(me.h)
-	if kr != C.kIOReturnSuccess {
+	kr := ioReturn(C.callIOUSBDevice_USBDeviceOpen(me.h))
+	if kr != kIOReturnSuccess {
 		return fmt.Errorf("USBDeviceOpen failed (code %d)", kr)
 	}
 	return nil
 }
 
 func (me *IOUSBDevice) USBDeviceClose() error {
-	kr := C.callIOUSBDevice_USBDeviceClose(me.h)
-	if kr != C.kIOReturnSuccess {
+	kr := ioReturn(C.callIOUSBDevice_USBDeviceClose(me.h))
+	if kr != kIOReturnSuccess {
 		return fmt.Errorf("USBDeviceClose failed (code %d)", kr)
 	}
 	return nil
@@ -489,8 +493,8 @@ func (me *IOUSBDevice) Release() {
 
 func (me *IOUSBDevice) GetConfiguration() (uint8, error) {
 	var config C.UInt8
-	kr := C.callIOUSBDevice_GetConfiguration(me.h, &config)
-	if kr != C.kIOReturnSuccess {
+	kr := ioReturn(C.callIOUSBDevice_GetConfiguration(me.h, &config))
+	if kr != kIOReturnSuccess {
 		return 0, fmt.Errorf("GetConfiguration failed (code %d)", kr)
 	}
 	return uint8(config), nil
@@ -498,8 +502,8 @@ func (me *IOUSBDevice) GetConfiguration() (uint8, error) {
 
 func (me *IOUSBDevice) GetNumberOfConfigurations() (uint8, error) {
 	var numConfigs C.UInt8
-	kr := C.callIOUSBDevice_GetNumberOfConfigurations(me.h, &numConfigs)
-	if kr != C.kIOReturnSuccess {
+	kr := ioReturn(C.callIOUSBDevice_GetNumberOfConfigurations(me.h, &numConfigs))
+	if kr != kIOReturnSuccess {
 		return 0, fmt.Errorf("GetNumberOfConfigurations failed (code %d)", kr)
 	}
 	return uint8(numConfigs), nil
@@ -507,8 +511,8 @@ func (me *IOUSBDevice) GetNumberOfConfigurations() (uint8, error) {
 
 func (me *IOUSBDevice) GetConfigurationDescriptorPtr(index uint8) (*ioUSBConfigurationDescriptor, error) {
 	var configDesc C.IOUSBConfigurationDescriptorPtr
-	kr := C.callIOUSBDevice_GetConfigurationDescriptorPtr(me.h, C.UInt8(index), &configDesc)
-	if kr != C.kIOReturnSuccess {
+	kr := ioReturn(C.callIOUSBDevice_GetConfigurationDescriptorPtr(me.h, C.UInt8(index), &configDesc))
+	if kr != kIOReturnSuccess {
 		return nil, fmt.Errorf("GetConfigurationDescriptorPtr failed (code %d)", kr)
 	}
 	return (*ioUSBConfigurationDescriptor)(unsafe.Pointer(configDesc)), nil
@@ -516,8 +520,8 @@ func (me *IOUSBDevice) GetConfigurationDescriptorPtr(index uint8) (*ioUSBConfigu
 
 func (me *IOUSBDevice) DeviceRequest(request *ioUSBDevRequest) error {
 	cRequest := request.toC()
-	kr := C.callIOUSBDevice_DeviceRequest(me.h, &cRequest)
-	if kr != C.kIOReturnSuccess {
+	kr := ioReturn(C.callIOUSBDevice_DeviceRequest(me.h, &cRequest))
+	if kr != kIOReturnSuccess {
 		return fmt.Errorf("DeviceRequest failed (code %d)", kr)
 	}
 	request.copyFromC(cRequest)
