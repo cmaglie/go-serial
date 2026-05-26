@@ -204,7 +204,7 @@ func cStringToGo(ptr *byte) string {
 	for *(*byte)(unsafe.Add(unsafe.Pointer(ptr), n)) != 0 {
 		n++
 	}
-	return unsafe.String(ptr, n)
+	return string(unsafe.Slice(ptr, n))
 }
 
 func nativeGetDetailedPortsList() ([]*PortDetails, error) {
