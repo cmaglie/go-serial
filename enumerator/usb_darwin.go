@@ -129,11 +129,14 @@ var (
 	ioIteratorIsValid            func(ioIterator) uint8
 	ioIteratorReset              func(ioIterator) kernReturn
 	ioIteratorNext               func(ioIterator) ioObject
+	cfRelease                    func(cfTypeRef)
 )
 
 func init() {
+	coreFoundation := mustDlopen("/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")
 	ioKit := mustDlopen("/System/Library/Frameworks/IOKit.framework/IOKit")
 
+	purego.RegisterLibFunc(&cfRelease, coreFoundation, "CFRelease")
 	purego.RegisterLibFunc(&ioServiceMatching, ioKit, "IOServiceMatching")
 	purego.RegisterLibFunc(&ioServiceGetMatchingServices, ioKit, "IOServiceGetMatchingServices")
 	purego.RegisterLibFunc(&ioObjectRelease, ioKit, "IOObjectRelease")
@@ -310,11 +313,11 @@ func (ref cfStringRef) GetGoString() (string, bool) {
 }
 
 func (ref cfStringRef) Release() {
-	C.CFRelease(C.CFTypeRef(ref))
+	cfRelease(cfTypeRef(ref))
 }
 
 func (ref cfTypeRef) Release() {
-	C.CFRelease(C.CFTypeRef(ref))
+	cfRelease(ref)
 }
 
 // io_registry_entry_t
