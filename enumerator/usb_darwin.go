@@ -122,20 +122,21 @@ func (r *ioUSBDevRequest) copyFromC(c C.IOUSBDevRequest) {
 }
 
 var (
-	ioServiceMatching            func(string) cfMutableDictionaryRef
-	ioServiceGetMatchingServices func(machPort, cfDictionaryRef, *ioIterator) kernReturn
-	ioObjectRelease              func(ioObject) kernReturn
-	ioObjectGetClass             func(ioObject, *byte) kernReturn
-	ioIteratorIsValid            func(ioIterator) uint8
-	ioIteratorReset              func(ioIterator) kernReturn
-	ioIteratorNext               func(ioIterator) ioObject
-	cfRelease                    func(cfTypeRef)
-	cfStringGetLength            func(cfStringRef) cfIndex
-	cfStringGetMaximumSize       func(cfIndex, cfStringEncoding) cfIndex
-	cfStringGetCString           func(cfStringRef, *byte, cfIndex, cfStringEncoding) uint8
-	cfStringGetCStringPtr        func(cfStringRef, cfStringEncoding) *byte
-	cfStringCreateWithCString    func(cfAllocatorRef, *byte, cfStringEncoding) cfStringRef
-	cfStringCreateWithBytesFunc  func(cfAllocatorRef, *uint8, cfIndex, cfStringEncoding, uint8) cfStringRef
+	ioServiceMatching             func(string) cfMutableDictionaryRef
+	ioServiceGetMatchingServices  func(machPort, cfDictionaryRef, *ioIterator) kernReturn
+	ioObjectRelease               func(ioObject) kernReturn
+	ioObjectGetClass              func(ioObject, *byte) kernReturn
+	ioIteratorIsValid             func(ioIterator) uint8
+	ioIteratorReset               func(ioIterator) kernReturn
+	ioIteratorNext                func(ioIterator) ioObject
+	cfRelease                     func(cfTypeRef)
+	cfStringGetLength             func(cfStringRef) cfIndex
+	cfStringGetMaximumSize        func(cfIndex, cfStringEncoding) cfIndex
+	cfStringGetCString            func(cfStringRef, *byte, cfIndex, cfStringEncoding) uint8
+	cfStringGetCStringPtr         func(cfStringRef, cfStringEncoding) *byte
+	cfStringCreateWithCString     func(cfAllocatorRef, *byte, cfStringEncoding) cfStringRef
+	cfStringCreateWithBytesFunc   func(cfAllocatorRef, *uint8, cfIndex, cfStringEncoding, uint8) cfStringRef
+	ioRegistryEntryCreateProperty func(ioRegistryEntry, cfStringRef, cfAllocatorRef, uint32) cfTypeRef
 )
 
 func init() {
@@ -149,6 +150,7 @@ func init() {
 	purego.RegisterLibFunc(&cfStringGetCStringPtr, coreFoundation, "CFStringGetCStringPtr")
 	purego.RegisterLibFunc(&cfStringCreateWithCString, coreFoundation, "CFStringCreateWithCString")
 	purego.RegisterLibFunc(&cfStringCreateWithBytesFunc, coreFoundation, "CFStringCreateWithBytes")
+	purego.RegisterLibFunc(&ioRegistryEntryCreateProperty, ioKit, "IORegistryEntryCreateCFProperty")
 	purego.RegisterLibFunc(&ioServiceMatching, ioKit, "IOServiceMatching")
 	purego.RegisterLibFunc(&ioServiceGetMatchingServices, ioKit, "IOServiceGetMatchingServices")
 	purego.RegisterLibFunc(&ioObjectRelease, ioKit, "IOObjectRelease")
@@ -350,7 +352,7 @@ func (me *io_registry_entry_t) GetParent(plane string) (io_registry_entry_t, err
 func (me *io_registry_entry_t) CreateCFProperty(key string) (cfTypeRef, error) {
 	k := cfStringCreateWithString(key)
 	defer k.Release()
-	property := C.IORegistryEntryCreateCFProperty(C.io_registry_entry_t(ioObject(*me)), C.CFStringRef(k), C.CFAllocatorRef(kCFAllocatorDefault), 0)
+	property := ioRegistryEntryCreateProperty(ioRegistryEntry(*me), k, kCFAllocatorDefault, 0)
 	if property == 0 {
 		return 0, errors.New("Property not found: " + key)
 	}
