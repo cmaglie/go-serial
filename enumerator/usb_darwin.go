@@ -72,6 +72,9 @@ type cfStringRef uintptr
 type cfTypeRef uintptr
 type cfMutableDictionaryRef uintptr
 type cfDictionaryRef uintptr
+
+// These structs mirror the leading C vtable layout exactly. The purego calls
+// below jump through the function pointers stored here, so field order matters.
 type ioCFPlugInInterface struct {
 	reserved       uintptr
 	QueryInterface uintptr
@@ -133,6 +136,9 @@ var kIOUSBDeviceInterfaceID = cfUUIDBytes{
 }
 
 const (
+	// QueryInterface expects REFIID by value. Registering the call with two
+	// uint64 chunks matches the 16-byte UUID payload on Darwin arm64 more
+	// reliably than passing the struct directly.
 	kIOUSBDeviceInterfaceIDLo uint64 = 0xd411f39ed087815c
 	kIOUSBDeviceInterfaceIDHi uint64 = 0x612805270a00458b
 )
@@ -230,6 +236,9 @@ func cStringToGo(ptr *byte) string {
 	for *(*byte)(unsafe.Add(unsafe.Pointer(ptr), n)) != 0 {
 		n++
 	}
+	// Copy into Go memory before returning. Several call sites hand us pointers
+	// backed by temporary C or stack-managed buffers, so returning an alias would
+	// produce corrupted strings once that storage is reused.
 	return string(unsafe.Slice(ptr, n))
 }
 
@@ -513,6 +522,8 @@ type io_service_t ioService
 func (me *io_service_t) IOCreatePlugInInterfaceForService() (plugin *IOCFPlugIn, score int32, err error) {
 	res := IOCFPlugIn{}
 	var s int32
+	// The UUID refs are materialized once via CFUUIDGetConstantUUIDWithBytes in
+	// init() and then reused here, matching the original macro-based C path.
 	kr := ioCreatePlugInInterface(
 		ioService(*me),
 		ioUSBDeviceUserClientTypeID,
@@ -540,6 +551,9 @@ func (me *IOCFPlugIn) QueryIOUSBDeviceInterface() (*IOUSBDevice, error) {
 	var queryInterface func(unsafe.Pointer, uint64, uint64, unsafe.Pointer) hResult
 	purego.RegisterFunc(&queryInterface, me.iface().QueryInterface)
 	device := IOUSBDevice{}
+	// Splitting the UUID into register-sized halves avoids the by-value struct
+	// calling-convention mismatch that caused the first purego QueryInterface
+	// attempt to crash on Darwin arm64.
 	result := queryInterface(me.h, kIOUSBDeviceInterfaceIDLo, kIOUSBDeviceInterfaceIDHi, unsafe.Pointer(&device.h))
 	if result != sOK {
 		return nil, fmt.Errorf("QueryInterface failed (code %d)", result)
@@ -676,6 +690,9 @@ func RetrieveUSBConfigurationString(service io_service_t) (string, error) {
 	}
 
 	buffer := make([]byte, 1024)
+	// DeviceRequest is synchronous, so a Go slice is enough here as long as we
+	// keep it alive until all control transfers and the CFString conversion are
+	// finished. This lets us avoid the last malloc/free pair from the cgo version.
 	pData := unsafe.Pointer(&buffer[0])
 	request1 := ioUSBDevRequest{
 		bmRequestType: (kUSBIn << 7) | (kUSBStandard << 5) | kUSBDevice,
@@ -722,6 +739,8 @@ func RetrieveUSBConfigurationString(service io_service_t) (string, error) {
 	if !ok {
 		return "", errors.New("failed to convert CFString to Go string")
 	}
+	// pData points into buffer, so make the lifetime explicit across the calls
+	// above that hand the pointer to the kernel/user-client stack.
 	runtime.KeepAlive(buffer)
 	return configuration, nil
 }
