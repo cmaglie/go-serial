@@ -134,6 +134,7 @@ var (
 	cfStringGetMaximumSize       func(cfIndex, cfStringEncoding) cfIndex
 	cfStringGetCString           func(cfStringRef, *byte, cfIndex, cfStringEncoding) uint8
 	cfStringGetCStringPtr        func(cfStringRef, cfStringEncoding) *byte
+	cfStringCreateWithBytesFunc  func(cfAllocatorRef, *uint8, cfIndex, cfStringEncoding, uint8) cfStringRef
 )
 
 func init() {
@@ -145,6 +146,7 @@ func init() {
 	purego.RegisterLibFunc(&cfStringGetMaximumSize, coreFoundation, "CFStringGetMaximumSizeForEncoding")
 	purego.RegisterLibFunc(&cfStringGetCString, coreFoundation, "CFStringGetCString")
 	purego.RegisterLibFunc(&cfStringGetCStringPtr, coreFoundation, "CFStringGetCStringPtr")
+	purego.RegisterLibFunc(&cfStringCreateWithBytesFunc, coreFoundation, "CFStringCreateWithBytes")
 	purego.RegisterLibFunc(&ioServiceMatching, ioKit, "IOServiceMatching")
 	purego.RegisterLibFunc(&ioServiceGetMatchingServices, ioKit, "IOServiceGetMatchingServices")
 	purego.RegisterLibFunc(&ioObjectRelease, ioKit, "IOObjectRelease")
@@ -295,7 +297,7 @@ func cfStringCreateWithString(s string) cfStringRef {
 }
 
 func cfStringCreateWithBytes(data unsafe.Pointer, len uint32, encoding cfStringEncoding) (cfStringRef, bool) {
-	str := C.CFStringCreateWithBytes(C.CFAllocatorRef(kCFAllocatorDefault), (*C.uint8_t)(data), C.CFIndex(cfIndex(len)), C.CFStringEncoding(encoding), C.FALSE)
+	str := cfStringCreateWithBytesFunc(kCFAllocatorDefault, (*uint8)(data), cfIndex(len), encoding, 0)
 	return cfStringRef(str), str != 0
 }
 
