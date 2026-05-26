@@ -165,8 +165,8 @@ func extractPortInfo(service io_registry_entry_t) (*PortDetails, error) {
 	}
 	if searchErr == nil {
 		// It's an IOUSBDevice
-		vid, _ := usbDevice.GetIntProperty("idVendor", C.kCFNumberSInt16Type)
-		pid, _ := usbDevice.GetIntProperty("idProduct", C.kCFNumberSInt16Type)
+		vid, _ := usbDevice.GetIntProperty("idVendor", kCFNumberSInt16Type)
+		pid, _ := usbDevice.GetIntProperty("idProduct", kCFNumberSInt16Type)
 		serialNumber, _ := usbDevice.GetStringProperty("kUSBSerialNumberString")
 		vendor, _ := usbDevice.GetStringProperty("kUSBVendorString")
 		product, _ := usbDevice.GetStringProperty("kUSBProductString")
@@ -563,7 +563,7 @@ func RetrieveUSBConfigurationString(service io_service_t) (string, error) {
 		return "", errors.New("descriptor length too short for configuration string")
 	}
 
-	cfConfiguration, ok := cfStringCreateWithBytes(unsafe.Add(pData, 2), descriptorLength-2, C.kCFStringEncodingUTF16LE)
+	cfConfiguration, ok := cfStringCreateWithBytes(unsafe.Add(pData, 2), descriptorLength-2, kCFStringEncodingUTF16LE)
 	if !ok {
 		return "", errors.New("failed to create CFString from bytes")
 	}
