@@ -16,6 +16,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"time"
 	"unsafe"
 
@@ -681,12 +682,8 @@ func RetrieveUSBConfigurationString(service io_service_t) (string, error) {
 		return "", errors.New("configuration string index not found")
 	}
 
-	pData := C.malloc(1024)
-	if pData == nil {
-		return "", errors.New("failed to allocate memory for USB request")
-	}
-	buffer := unsafe.Slice((*uint8)(pData), 1024)
-	defer C.free(pData)
+	buffer := make([]byte, 1024)
+	pData := unsafe.Pointer(&buffer[0])
 	request1 := ioUSBDevRequest{
 		bmRequestType: (kUSBIn << 7) | (kUSBStandard << 5) | kUSBDevice,
 		bRequest:      kUSBRqGetDescriptor,
@@ -732,5 +729,6 @@ func RetrieveUSBConfigurationString(service io_service_t) (string, error) {
 	if !ok {
 		return "", errors.New("failed to convert CFString to Go string")
 	}
+	runtime.KeepAlive(buffer)
 	return configuration, nil
 }
