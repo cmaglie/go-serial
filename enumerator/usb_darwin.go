@@ -156,10 +156,10 @@ var (
 	cfStringGetMaximumSize        func(cfIndex, cfStringEncoding) cfIndex
 	cfStringGetCString            func(cfStringRef, *byte, cfIndex, cfStringEncoding) uint8
 	cfStringGetCStringPtr         func(cfStringRef, cfStringEncoding) *byte
-	cfStringCreateWithCString     func(cfAllocatorRef, *byte, cfStringEncoding) cfStringRef
+	cfStringCreateWithCString     func(cfAllocatorRef, string, cfStringEncoding) cfStringRef
 	cfStringCreateWithBytesFunc   func(cfAllocatorRef, *uint8, cfIndex, cfStringEncoding, uint8) cfStringRef
 	cfNumberGetValue              func(cfNumberRef, cfNumberType, unsafe.Pointer) uint8
-	ioRegistryEntryGetParent      func(ioRegistryEntry, *byte, *ioRegistryEntry) kernReturn
+	ioRegistryEntryGetParent      func(ioRegistryEntry, string, *ioRegistryEntry) kernReturn
 	ioRegistryEntryCreateProperty func(ioRegistryEntry, cfStringRef, cfAllocatorRef, uint32) cfTypeRef
 	ioCreatePlugInInterface       func(ioService, cfUUIDRef, cfUUIDRef, unsafe.Pointer, *int32) ioReturn
 )
@@ -323,9 +323,7 @@ func getMatchingServices(matcher cfMutableDictionaryRef) (io_iterator_t, error) 
 }
 
 func cfStringCreateWithString(s string) cfStringRef {
-	c := C.CString(s)
-	defer C.free(unsafe.Pointer(c))
-	return cfStringCreateWithCString(kCFAllocatorDefault, (*byte)(unsafe.Pointer(c)), kCFStringEncodingMacRoman)
+	return cfStringCreateWithCString(kCFAllocatorDefault, s, kCFStringEncodingMacRoman)
 }
 
 func cfStringCreateWithBytes(data unsafe.Pointer, len uint32, encoding cfStringEncoding) (cfStringRef, bool) {
@@ -367,10 +365,8 @@ func (ref cfTypeRef) Release() {
 type io_registry_entry_t ioRegistryEntry
 
 func (me *io_registry_entry_t) GetParent(plane string) (io_registry_entry_t, error) {
-	cPlane := C.CString(plane)
-	defer C.free(unsafe.Pointer(cPlane))
 	var parent ioRegistryEntry
-	err := ioRegistryEntryGetParent(ioRegistryEntry(*me), (*byte)(unsafe.Pointer(cPlane)), &parent)
+	err := ioRegistryEntryGetParent(ioRegistryEntry(*me), plane, &parent)
 	if err != 0 {
 		return 0, errors.New("no parent device available")
 	}
