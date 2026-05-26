@@ -6,13 +6,6 @@
 
 package enumerator
 
-// #cgo LDFLAGS: -framework CoreFoundation -framework IOKit
-// #include <IOKit/IOKitLib.h>
-// #include <IOKit/IOCFPlugIn.h>
-// #include <IOKit/usb/IOUSBLib.h>
-// #include <CoreFoundation/CoreFoundation.h>
-// #include <stdlib.h>
-import "C"
 import (
 	"errors"
 	"fmt"
