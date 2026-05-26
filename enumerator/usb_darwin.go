@@ -132,6 +132,7 @@ var (
 	cfRelease                    func(cfTypeRef)
 	cfStringGetLength            func(cfStringRef) cfIndex
 	cfStringGetMaximumSize       func(cfIndex, cfStringEncoding) cfIndex
+	cfStringGetCString           func(cfStringRef, *byte, cfIndex, cfStringEncoding) uint8
 )
 
 func init() {
@@ -141,6 +142,7 @@ func init() {
 	purego.RegisterLibFunc(&cfRelease, coreFoundation, "CFRelease")
 	purego.RegisterLibFunc(&cfStringGetLength, coreFoundation, "CFStringGetLength")
 	purego.RegisterLibFunc(&cfStringGetMaximumSize, coreFoundation, "CFStringGetMaximumSizeForEncoding")
+	purego.RegisterLibFunc(&cfStringGetCString, coreFoundation, "CFStringGetCString")
 	purego.RegisterLibFunc(&ioServiceMatching, ioKit, "IOServiceMatching")
 	purego.RegisterLibFunc(&ioServiceGetMatchingServices, ioKit, "IOServiceGetMatchingServices")
 	purego.RegisterLibFunc(&ioObjectRelease, ioKit, "IOObjectRelease")
@@ -310,7 +312,7 @@ func (ref cfStringRef) GetGoString() (string, bool) {
 		return "", false
 	}
 	defer C.free(buff)
-	if C.CFStringGetCString(C.CFStringRef(ref), (*C.char)(buff), C.CFIndex(cfIndex(maxSize)), C.CFStringEncoding(kCFStringEncodingUTF8)) == C.false {
+	if cfStringGetCString(ref, (*byte)(buff), cfIndex(maxSize), kCFStringEncodingUTF8) == 0 {
 		return "", false
 	}
 	return C.GoString((*C.char)(buff)), true
@@ -361,11 +363,11 @@ func (me *io_registry_entry_t) GetStringProperty(key string) (string, error) {
 	}
 	// in certain circumstances CFStringGetCStringPtr may return NULL
 	// and we must retrieve the string by copy
-	buff := make([]C.char, 1024)
-	if C.CFStringGetCString(C.CFStringRef(property), &buff[0], 1024, 0) != C.true {
+	buff := make([]byte, 1024)
+	if cfStringGetCString(cfStringRef(property), &buff[0], 1024, 0) == 0 {
 		return "", fmt.Errorf("property '%s' can't be converted", key)
 	}
-	return C.GoString(&buff[0]), nil
+	return C.GoString((*C.char)(unsafe.Pointer(&buff[0]))), nil
 }
 
 func (me *io_registry_entry_t) GetUSBConfigurationString() (string, error) {
