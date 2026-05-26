@@ -145,6 +145,11 @@ var kIOUSBDeviceInterfaceID = cfUUIDBytes{
 	byte12: 0x27, byte13: 0x05, byte14: 0x28, byte15: 0x61,
 }
 
+const (
+	kIOUSBDeviceInterfaceIDLo uint64 = 0xd411f39ed087815c
+	kIOUSBDeviceInterfaceIDHi uint64 = 0x612805270a00458b
+)
+
 var (
 	ioServiceMatching             func(string) cfMutableDictionaryRef
 	ioServiceGetMatchingServices  func(machPort, cfDictionaryRef, *ioIterator) kernReturn
@@ -510,12 +515,14 @@ func (me *IOCFPlugIn) iface() *ioCFPlugInInterface {
 }
 
 func (me *IOCFPlugIn) QueryIOUSBDeviceInterface() (*IOUSBDevice, error) {
-	var device **C.IOUSBDeviceInterface
-	result := hResult(C.callIOCFPlugin_QueryInterface(me.h, C.CFUUIDGetUUIDBytes(C.kIOUSBDeviceInterfaceID), (*C.LPVOID)(unsafe.Pointer(&device))))
+	var queryInterface func(unsafe.Pointer, uint64, uint64, unsafe.Pointer) hResult
+	purego.RegisterFunc(&queryInterface, me.iface().QueryInterface)
+	device := IOUSBDevice{}
+	result := queryInterface(unsafe.Pointer(me.h), kIOUSBDeviceInterfaceIDLo, kIOUSBDeviceInterfaceIDHi, unsafe.Pointer(&device.h))
 	if result != sOK {
 		return nil, fmt.Errorf("QueryInterface failed (code %d)", result)
 	}
-	return &IOUSBDevice{h: unsafe.Pointer(device)}, nil
+	return &device, nil
 }
 
 func (me *IOCFPlugIn) Release() {
