@@ -144,6 +144,21 @@ const (
 )
 
 var (
+	kIOUSBDeviceUserClientTypeID = cfUUIDBytes{
+		byte0: 0x9d, byte1: 0xc7, byte2: 0xb7, byte3: 0x80,
+		byte4: 0x9e, byte5: 0xc0, byte6: 0x11, byte7: 0xd4,
+		byte8: 0xa5, byte9: 0x4f, byte10: 0x00, byte11: 0x0a,
+		byte12: 0x27, byte13: 0x05, byte14: 0x28, byte15: 0x61,
+	}
+	kIOCFPlugInInterfaceID = cfUUIDBytes{
+		byte0: 0xc2, byte1: 0x44, byte2: 0xe8, byte3: 0x58,
+		byte4: 0x10, byte5: 0x9c, byte6: 0x11, byte7: 0xd4,
+		byte8: 0x91, byte9: 0xd4, byte10: 0x00, byte11: 0x50,
+		byte12: 0xe4, byte13: 0xc6, byte14: 0x42, byte15: 0x6f,
+	}
+)
+
+var (
 	ioServiceMatching             func(string) cfMutableDictionaryRef
 	ioServiceGetMatchingServices  func(machPort, cfDictionaryRef, *ioIterator) kernReturn
 	ioObjectRelease               func(ioObject) kernReturn
@@ -158,10 +173,13 @@ var (
 	cfStringGetCStringPtr         func(cfStringRef, cfStringEncoding) *byte
 	cfStringCreateWithCString     func(cfAllocatorRef, string, cfStringEncoding) cfStringRef
 	cfStringCreateWithBytesFunc   func(cfAllocatorRef, *uint8, cfIndex, cfStringEncoding, uint8) cfStringRef
+	cfUUIDGetConstant             func(cfAllocatorRef, uint8, uint8, uint8, uint8, uint8, uint8, uint8, uint8, uint8, uint8, uint8, uint8, uint8, uint8, uint8, uint8) cfUUIDRef
 	cfNumberGetValue              func(cfNumberRef, cfNumberType, unsafe.Pointer) uint8
 	ioRegistryEntryGetParent      func(ioRegistryEntry, string, *ioRegistryEntry) kernReturn
 	ioRegistryEntryCreateProperty func(ioRegistryEntry, cfStringRef, cfAllocatorRef, uint32) cfTypeRef
 	ioCreatePlugInInterface       func(ioService, cfUUIDRef, cfUUIDRef, unsafe.Pointer, *int32) ioReturn
+	ioUSBDeviceUserClientTypeID   cfUUIDRef
+	ioCFPlugInInterfaceID         cfUUIDRef
 )
 
 func init() {
@@ -175,6 +193,7 @@ func init() {
 	purego.RegisterLibFunc(&cfStringGetCStringPtr, coreFoundation, "CFStringGetCStringPtr")
 	purego.RegisterLibFunc(&cfStringCreateWithCString, coreFoundation, "CFStringCreateWithCString")
 	purego.RegisterLibFunc(&cfStringCreateWithBytesFunc, coreFoundation, "CFStringCreateWithBytes")
+	purego.RegisterLibFunc(&cfUUIDGetConstant, coreFoundation, "CFUUIDGetConstantUUIDWithBytes")
 	purego.RegisterLibFunc(&cfNumberGetValue, coreFoundation, "CFNumberGetValue")
 	purego.RegisterLibFunc(&ioRegistryEntryGetParent, ioKit, "IORegistryEntryGetParentEntry")
 	purego.RegisterLibFunc(&ioRegistryEntryCreateProperty, ioKit, "IORegistryEntryCreateCFProperty")
@@ -186,6 +205,19 @@ func init() {
 	purego.RegisterLibFunc(&ioIteratorIsValid, ioKit, "IOIteratorIsValid")
 	purego.RegisterLibFunc(&ioIteratorReset, ioKit, "IOIteratorReset")
 	purego.RegisterLibFunc(&ioIteratorNext, ioKit, "IOIteratorNext")
+
+	ioUSBDeviceUserClientTypeID = cfUUIDGetConstant(kCFAllocatorDefault,
+		kIOUSBDeviceUserClientTypeID.byte0, kIOUSBDeviceUserClientTypeID.byte1, kIOUSBDeviceUserClientTypeID.byte2, kIOUSBDeviceUserClientTypeID.byte3,
+		kIOUSBDeviceUserClientTypeID.byte4, kIOUSBDeviceUserClientTypeID.byte5, kIOUSBDeviceUserClientTypeID.byte6, kIOUSBDeviceUserClientTypeID.byte7,
+		kIOUSBDeviceUserClientTypeID.byte8, kIOUSBDeviceUserClientTypeID.byte9, kIOUSBDeviceUserClientTypeID.byte10, kIOUSBDeviceUserClientTypeID.byte11,
+		kIOUSBDeviceUserClientTypeID.byte12, kIOUSBDeviceUserClientTypeID.byte13, kIOUSBDeviceUserClientTypeID.byte14, kIOUSBDeviceUserClientTypeID.byte15,
+	)
+	ioCFPlugInInterfaceID = cfUUIDGetConstant(kCFAllocatorDefault,
+		kIOCFPlugInInterfaceID.byte0, kIOCFPlugInInterfaceID.byte1, kIOCFPlugInInterfaceID.byte2, kIOCFPlugInInterfaceID.byte3,
+		kIOCFPlugInInterfaceID.byte4, kIOCFPlugInInterfaceID.byte5, kIOCFPlugInInterfaceID.byte6, kIOCFPlugInInterfaceID.byte7,
+		kIOCFPlugInInterfaceID.byte8, kIOCFPlugInInterfaceID.byte9, kIOCFPlugInInterfaceID.byte10, kIOCFPlugInInterfaceID.byte11,
+		kIOCFPlugInInterfaceID.byte12, kIOCFPlugInInterfaceID.byte13, kIOCFPlugInInterfaceID.byte14, kIOCFPlugInInterfaceID.byte15,
+	)
 }
 
 func mustDlopen(path string) uintptr {
@@ -493,8 +525,8 @@ func (me *io_service_t) IOCreatePlugInInterfaceForService() (plugin *IOCFPlugIn,
 	var s int32
 	kr := ioCreatePlugInInterface(
 		ioService(*me),
-		cfUUIDRef(C.kIOUSBDeviceUserClientTypeID),
-		cfUUIDRef(C.kIOCFPlugInInterfaceID),
+		ioUSBDeviceUserClientTypeID,
+		ioCFPlugInInterfaceID,
 		unsafe.Pointer(&res.h),
 		&s,
 	)
