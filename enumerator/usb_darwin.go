@@ -57,14 +57,20 @@ type ioObject uint32
 type ioIterator uint32
 type ioRegistryEntry ioObject
 type ioService ioObject
+type cfStringEncoding uint32
+type cfNumberType int32
 type cfStringRef uintptr
 type cfTypeRef uintptr
 type cfMutableDictionaryRef uintptr
 type cfDictionaryRef uintptr
 
 const (
-	kIOMasterPortDefault machPort   = 0
-	kernSuccess          kernReturn = 0
+	kIOMasterPortDefault      machPort         = 0
+	kernSuccess               kernReturn       = 0
+	kCFStringEncodingMacRoman cfStringEncoding = 0
+	kCFStringEncodingUTF8     cfStringEncoding = 0x08000100
+	kCFStringEncodingUTF16LE  cfStringEncoding = 0x14000100
+	kCFNumberSInt16Type       cfNumberType     = 2
 )
 
 var (
@@ -226,11 +232,11 @@ func getMatchingServices(matcher cfMutableDictionaryRef) (io_iterator_t, error) 
 func cfStringCreateWithString(s string) cfStringRef {
 	c := C.CString(s)
 	defer C.free(unsafe.Pointer(c))
-	return cfStringRef(C.CFStringCreateWithCString(C.kCFAllocatorDefault, c, C.kCFStringEncodingMacRoman))
+	return cfStringRef(C.CFStringCreateWithCString(C.kCFAllocatorDefault, c, C.CFStringEncoding(kCFStringEncodingMacRoman)))
 }
 
-func cfStringCreateWithBytes(data unsafe.Pointer, len uint32, encoding C.CFStringEncoding) (cfStringRef, bool) {
-	str := C.CFStringCreateWithBytes(C.kCFAllocatorDefault, (*C.uint8_t)(data), C.CFIndex(len), encoding, C.FALSE)
+func cfStringCreateWithBytes(data unsafe.Pointer, len uint32, encoding cfStringEncoding) (cfStringRef, bool) {
+	str := C.CFStringCreateWithBytes(C.kCFAllocatorDefault, (*C.uint8_t)(data), C.CFIndex(len), C.CFStringEncoding(encoding), C.FALSE)
 	return cfStringRef(str), str != 0
 }
 
@@ -238,18 +244,18 @@ func (ref cfStringRef) GetLength() uint32 {
 	return uint32(C.CFStringGetLength(C.CFStringRef(ref)))
 }
 
-func (ref cfStringRef) GetMaximumSizeForEncoding(encoding C.CFStringEncoding) uint32 {
-	return uint32(C.CFStringGetMaximumSizeForEncoding(C.CFIndex(ref.GetLength()), encoding))
+func (ref cfStringRef) GetMaximumSizeForEncoding(encoding cfStringEncoding) uint32 {
+	return uint32(C.CFStringGetMaximumSizeForEncoding(C.CFIndex(ref.GetLength()), C.CFStringEncoding(encoding)))
 }
 
 func (ref cfStringRef) GetGoString() (string, bool) {
-	maxSize := ref.GetMaximumSizeForEncoding(C.kCFStringEncodingUTF8) + 1
+	maxSize := ref.GetMaximumSizeForEncoding(kCFStringEncodingUTF8) + 1
 	buff := C.malloc(C.size_t(maxSize))
 	if buff == nil {
 		return "", false
 	}
 	defer C.free(buff)
-	if C.CFStringGetCString(C.CFStringRef(ref), (*C.char)(buff), C.CFIndex(maxSize), C.kCFStringEncodingUTF8) == C.false {
+	if C.CFStringGetCString(C.CFStringRef(ref), (*C.char)(buff), C.CFIndex(maxSize), C.CFStringEncoding(kCFStringEncodingUTF8)) == C.false {
 		return "", false
 	}
 	return C.GoString((*C.char)(buff)), true
@@ -315,14 +321,14 @@ func (me *io_registry_entry_t) GetUSBConfigurationString() (string, error) {
 	return configuration, nil
 }
 
-func (me *io_registry_entry_t) GetIntProperty(key string, intType C.CFNumberType) (int, error) {
+func (me *io_registry_entry_t) GetIntProperty(key string, intType cfNumberType) (int, error) {
 	property, err := me.CreateCFProperty(key)
 	if err != nil {
 		return 0, err
 	}
 	defer property.Release()
 	var res int
-	if C.CFNumberGetValue((C.CFNumberRef)(property), intType, unsafe.Pointer(&res)) != C.true {
+	if C.CFNumberGetValue((C.CFNumberRef)(property), C.CFNumberType(intType), unsafe.Pointer(&res)) != C.true {
 		return res, fmt.Errorf("property '%s' can't be converted or has been truncated", key)
 	}
 	return res, nil
