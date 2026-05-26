@@ -85,6 +85,12 @@ type cfStringRef uintptr
 type cfTypeRef uintptr
 type cfMutableDictionaryRef uintptr
 type cfDictionaryRef uintptr
+type ioCFPlugInInterface struct {
+	reserved       uintptr
+	QueryInterface uintptr
+	AddRef         uintptr
+	Release        uintptr
+}
 type ioUSBDeviceInterface struct {
 	reserved                      uintptr
 	QueryInterface                uintptr
@@ -499,6 +505,10 @@ type IOCFPlugIn struct {
 	h **C.IOCFPlugInInterface
 }
 
+func (me *IOCFPlugIn) iface() *ioCFPlugInInterface {
+	return (*ioCFPlugInInterface)(unsafe.Pointer(*me.h))
+}
+
 func (me *IOCFPlugIn) QueryIOUSBDeviceInterface() (*IOUSBDevice, error) {
 	var device **C.IOUSBDeviceInterface
 	result := hResult(C.callIOCFPlugin_QueryInterface(me.h, C.CFUUIDGetUUIDBytes(C.kIOUSBDeviceInterfaceID), (*C.LPVOID)(unsafe.Pointer(&device))))
@@ -509,7 +519,9 @@ func (me *IOCFPlugIn) QueryIOUSBDeviceInterface() (*IOUSBDevice, error) {
 }
 
 func (me *IOCFPlugIn) Release() {
-	C.callIOCFPlugin_Release(me.h)
+	var release func(unsafe.Pointer) uLong
+	purego.RegisterFunc(&release, me.iface().Release)
+	release(unsafe.Pointer(me.h))
 }
 
 // IOUSBDeviceInterface
