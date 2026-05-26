@@ -61,6 +61,7 @@ type cfAllocatorRef uintptr
 type cfIndex int64
 type cfStringEncoding uint32
 type cfNumberType int32
+type cfNumberRef uintptr
 type cfStringRef uintptr
 type cfTypeRef uintptr
 type cfMutableDictionaryRef uintptr
@@ -331,7 +332,7 @@ func (me *io_registry_entry_t) GetIntProperty(key string, intType cfNumberType) 
 	}
 	defer property.Release()
 	var res int
-	if C.CFNumberGetValue((C.CFNumberRef)(property), C.CFNumberType(intType), unsafe.Pointer(&res)) != C.true {
+	if C.CFNumberGetValue(C.CFNumberRef(cfNumberRef(property)), C.CFNumberType(intType), unsafe.Pointer(&res)) != C.true {
 		return res, fmt.Errorf("property '%s' can't be converted or has been truncated", key)
 	}
 	return res, nil
