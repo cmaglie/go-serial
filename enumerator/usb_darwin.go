@@ -83,6 +83,7 @@ type cfIndex int64
 type cfStringEncoding uint32
 type cfNumberType int32
 type cfNumberRef uintptr
+type cfUUIDRef uintptr
 type cfStringRef uintptr
 type cfTypeRef uintptr
 type cfMutableDictionaryRef uintptr
@@ -139,6 +140,7 @@ var (
 	cfNumberGetValue              func(cfNumberRef, cfNumberType, unsafe.Pointer) uint8
 	ioRegistryEntryGetParent      func(ioRegistryEntry, *byte, *ioRegistryEntry) kernReturn
 	ioRegistryEntryCreateProperty func(ioRegistryEntry, cfStringRef, cfAllocatorRef, uint32) cfTypeRef
+	ioCreatePlugInInterface       func(ioService, cfUUIDRef, cfUUIDRef, unsafe.Pointer, *int32) ioReturn
 )
 
 func init() {
@@ -155,6 +157,7 @@ func init() {
 	purego.RegisterLibFunc(&cfNumberGetValue, coreFoundation, "CFNumberGetValue")
 	purego.RegisterLibFunc(&ioRegistryEntryGetParent, ioKit, "IORegistryEntryGetParentEntry")
 	purego.RegisterLibFunc(&ioRegistryEntryCreateProperty, ioKit, "IORegistryEntryCreateCFProperty")
+	purego.RegisterLibFunc(&ioCreatePlugInInterface, ioKit, "IOCreatePlugInInterfaceForService")
 	purego.RegisterLibFunc(&ioServiceMatching, ioKit, "IOServiceMatching")
 	purego.RegisterLibFunc(&ioServiceGetMatchingServices, ioKit, "IOServiceGetMatchingServices")
 	purego.RegisterLibFunc(&ioObjectRelease, ioKit, "IOObjectRelease")
@@ -459,12 +462,18 @@ type io_service_t ioService
 
 func (me *io_service_t) IOCreatePlugInInterfaceForService() (plugin *IOCFPlugIn, score int32, err error) {
 	res := IOCFPlugIn{}
-	var s C.SInt32
-	kr := ioReturn(C.IOCreatePlugInInterfaceForService(C.io_service_t(ioObject(*me)), C.kIOUSBDeviceUserClientTypeID, C.kIOCFPlugInInterfaceID, &res.h, &s))
+	var s int32
+	kr := ioCreatePlugInInterface(
+		ioService(*me),
+		cfUUIDRef(C.kIOUSBDeviceUserClientTypeID),
+		cfUUIDRef(C.kIOCFPlugInInterfaceID),
+		unsafe.Pointer(&res.h),
+		&s,
+	)
 	if kr != kIOReturnSuccess || res.h == nil {
 		return nil, 0, fmt.Errorf("IOCreatePlugInInterfaceForService failed (code %d)", kr)
 	}
-	return &res, int32(s), nil
+	return &res, s, nil
 }
 
 // IOCFPlugInInterface
