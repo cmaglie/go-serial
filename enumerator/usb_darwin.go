@@ -51,22 +51,26 @@ import (
 	"github.com/ebitengine/purego"
 )
 
-type cfMutableDictionaryRef C.CFMutableDictionaryRef
-type cfDictionaryRef C.CFDictionaryRef
+type machPort uint32
+type kernReturn int32
+type ioObject uint32
+type ioIterator uint32
+type cfMutableDictionaryRef uintptr
+type cfDictionaryRef uintptr
 
 const (
-	kIOMasterPortDefault C.mach_port_t   = 0
-	kernSuccess          C.kern_return_t = 0
+	kIOMasterPortDefault machPort   = 0
+	kernSuccess          kernReturn = 0
 )
 
 var (
 	ioServiceMatching            func(string) cfMutableDictionaryRef
-	ioServiceGetMatchingServices func(C.mach_port_t, cfDictionaryRef, *C.io_iterator_t) C.kern_return_t
-	ioObjectRelease              func(C.io_object_t) C.kern_return_t
-	ioObjectGetClass             func(C.io_object_t, *byte) C.kern_return_t
-	ioIteratorIsValid            func(C.io_iterator_t) uint8
-	ioIteratorReset              func(C.io_iterator_t) C.kern_return_t
-	ioIteratorNext               func(C.io_iterator_t) C.io_object_t
+	ioServiceGetMatchingServices func(machPort, cfDictionaryRef, *ioIterator) kernReturn
+	ioObjectRelease              func(ioObject) kernReturn
+	ioObjectGetClass             func(ioObject, *byte) kernReturn
+	ioIteratorIsValid            func(ioIterator) uint8
+	ioIteratorReset              func(ioIterator) kernReturn
+	ioIteratorNext               func(ioIterator) ioObject
 )
 
 func init() {
@@ -201,13 +205,13 @@ func getAllServices(serviceType string) ([]io_object_t, error) {
 }
 
 // serviceMatching create a matching dictionary that specifies an IOService class match.
-func serviceMatching(serviceType string) C.CFMutableDictionaryRef {
-	return C.CFMutableDictionaryRef(ioServiceMatching(serviceType))
+func serviceMatching(serviceType string) cfMutableDictionaryRef {
+	return ioServiceMatching(serviceType)
 }
 
 // getMatchingServices look up registered IOService objects that match a matching dictionary.
-func getMatchingServices(matcher C.CFMutableDictionaryRef) (io_iterator_t, error) {
-	var i C.io_iterator_t
+func getMatchingServices(matcher cfMutableDictionaryRef) (io_iterator_t, error) {
+	var i ioIterator
 	err := ioServiceGetMatchingServices(kIOMasterPortDefault, cfDictionaryRef(matcher), &i)
 	if err != kernSuccess {
 		return 0, fmt.Errorf("IOServiceGetMatchingServices failed (code %d)", err)
@@ -329,18 +333,18 @@ func (me *io_registry_entry_t) GetIntProperty(key string, intType C.CFNumberType
 }
 
 func (me *io_registry_entry_t) Release() {
-	ioObjectRelease(C.io_object_t(*me))
+	ioObjectRelease(ioObject(C.io_object_t(*me)))
 }
 
 func (me *io_registry_entry_t) GetClass() string {
 	class := make([]byte, 1024)
-	ioObjectGetClass(C.io_object_t(*me), &class[0])
+	ioObjectGetClass(ioObject(C.io_object_t(*me)), &class[0])
 	return C.GoString((*C.char)(unsafe.Pointer(&class[0])))
 }
 
 // io_iterator_t
 
-type io_iterator_t C.io_iterator_t
+type io_iterator_t ioIterator
 
 // IsValid checks if an iterator is still valid.
 // Some iterators will be made invalid if changes are made to the
@@ -348,33 +352,33 @@ type io_iterator_t C.io_iterator_t
 // is still valid and should be called when Next returns zero.
 // An invalid iterator can be Reset and the iteration restarted.
 func (me *io_iterator_t) IsValid() bool {
-	return ioIteratorIsValid(C.io_iterator_t(*me)) != 0
+	return ioIteratorIsValid(ioIterator(*me)) != 0
 }
 
 func (me *io_iterator_t) Reset() {
-	ioIteratorReset(C.io_iterator_t(*me))
+	ioIteratorReset(ioIterator(*me))
 }
 
 func (me *io_iterator_t) Next() (io_object_t, bool) {
-	res := ioIteratorNext(C.io_iterator_t(*me))
+	res := ioIteratorNext(ioIterator(*me))
 	return io_object_t(res), res != 0
 }
 
 func (me *io_iterator_t) Release() {
-	ioObjectRelease(C.io_object_t(*me))
+	ioObjectRelease(ioObject(*me))
 }
 
 // io_object_t
 
-type io_object_t C.io_object_t
+type io_object_t ioObject
 
 func (me *io_object_t) Release() {
-	ioObjectRelease(C.io_object_t(*me))
+	ioObjectRelease(ioObject(*me))
 }
 
 func (me *io_object_t) GetClass() string {
 	class := make([]byte, 1024)
-	ioObjectGetClass(C.io_object_t(*me), &class[0])
+	ioObjectGetClass(ioObject(*me), &class[0])
 	return C.GoString((*C.char)(unsafe.Pointer(&class[0])))
 }
 
