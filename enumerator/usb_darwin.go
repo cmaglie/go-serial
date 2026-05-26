@@ -55,6 +55,8 @@ type machPort uint32
 type kernReturn int32
 type ioObject uint32
 type ioIterator uint32
+type ioRegistryEntry ioObject
+type ioService ioObject
 type cfMutableDictionaryRef uintptr
 type cfDictionaryRef uintptr
 
@@ -269,13 +271,13 @@ func (ref cfTypeRef) Release() {
 
 // io_registry_entry_t
 
-type io_registry_entry_t C.io_registry_entry_t
+type io_registry_entry_t ioRegistryEntry
 
 func (me *io_registry_entry_t) GetParent(plane string) (io_registry_entry_t, error) {
 	cPlane := C.CString(plane)
 	defer C.free(unsafe.Pointer(cPlane))
 	var parent C.io_registry_entry_t
-	err := C.IORegistryEntryGetParentEntry(C.io_registry_entry_t(*me), cPlane, &parent)
+	err := C.IORegistryEntryGetParentEntry(C.io_registry_entry_t(ioObject(*me)), cPlane, &parent)
 	if err != 0 {
 		return 0, errors.New("no parent device available")
 	}
@@ -285,7 +287,7 @@ func (me *io_registry_entry_t) GetParent(plane string) (io_registry_entry_t, err
 func (me *io_registry_entry_t) CreateCFProperty(key string) (cfTypeRef, error) {
 	k := cfStringCreateWithString(key)
 	defer k.Release()
-	property := C.IORegistryEntryCreateCFProperty(C.io_registry_entry_t(*me), C.CFStringRef(k), C.kCFAllocatorDefault, 0)
+	property := C.IORegistryEntryCreateCFProperty(C.io_registry_entry_t(ioObject(*me)), C.CFStringRef(k), C.kCFAllocatorDefault, 0)
 	if property == 0 {
 		return 0, errors.New("Property not found: " + key)
 	}
@@ -333,12 +335,12 @@ func (me *io_registry_entry_t) GetIntProperty(key string, intType C.CFNumberType
 }
 
 func (me *io_registry_entry_t) Release() {
-	ioObjectRelease(ioObject(C.io_object_t(*me)))
+	ioObjectRelease(ioObject(*me))
 }
 
 func (me *io_registry_entry_t) GetClass() string {
 	class := make([]byte, 1024)
-	ioObjectGetClass(ioObject(C.io_object_t(*me)), &class[0])
+	ioObjectGetClass(ioObject(*me), &class[0])
 	return C.GoString((*C.char)(unsafe.Pointer(&class[0])))
 }
 
@@ -384,12 +386,12 @@ func (me *io_object_t) GetClass() string {
 
 // io_service_t
 
-type io_service_t C.io_service_t
+type io_service_t ioService
 
 func (me *io_service_t) IOCreatePlugInInterfaceForService() (plugin *IOCFPlugIn, score int32, err error) {
 	res := IOCFPlugIn{}
 	var s C.SInt32
-	kr := C.IOCreatePlugInInterfaceForService(C.io_service_t(*me), C.kIOUSBDeviceUserClientTypeID, C.kIOCFPlugInInterfaceID, &res.h, &s)
+	kr := C.IOCreatePlugInInterfaceForService(C.io_service_t(ioObject(*me)), C.kIOUSBDeviceUserClientTypeID, C.kIOCFPlugInInterfaceID, &res.h, &s)
 	if kr != C.kIOReturnSuccess || res.h == nil {
 		return nil, 0, fmt.Errorf("IOCreatePlugInInterfaceForService failed (code %d)", kr)
 	}
