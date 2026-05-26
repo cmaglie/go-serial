@@ -137,6 +137,7 @@ var (
 	cfStringCreateWithCString     func(cfAllocatorRef, *byte, cfStringEncoding) cfStringRef
 	cfStringCreateWithBytesFunc   func(cfAllocatorRef, *uint8, cfIndex, cfStringEncoding, uint8) cfStringRef
 	cfNumberGetValue              func(cfNumberRef, cfNumberType, unsafe.Pointer) uint8
+	ioRegistryEntryGetParent      func(ioRegistryEntry, *byte, *ioRegistryEntry) kernReturn
 	ioRegistryEntryCreateProperty func(ioRegistryEntry, cfStringRef, cfAllocatorRef, uint32) cfTypeRef
 )
 
@@ -152,6 +153,7 @@ func init() {
 	purego.RegisterLibFunc(&cfStringCreateWithCString, coreFoundation, "CFStringCreateWithCString")
 	purego.RegisterLibFunc(&cfStringCreateWithBytesFunc, coreFoundation, "CFStringCreateWithBytes")
 	purego.RegisterLibFunc(&cfNumberGetValue, coreFoundation, "CFNumberGetValue")
+	purego.RegisterLibFunc(&ioRegistryEntryGetParent, ioKit, "IORegistryEntryGetParentEntry")
 	purego.RegisterLibFunc(&ioRegistryEntryCreateProperty, ioKit, "IORegistryEntryCreateCFProperty")
 	purego.RegisterLibFunc(&ioServiceMatching, ioKit, "IOServiceMatching")
 	purego.RegisterLibFunc(&ioServiceGetMatchingServices, ioKit, "IOServiceGetMatchingServices")
@@ -343,8 +345,8 @@ type io_registry_entry_t ioRegistryEntry
 func (me *io_registry_entry_t) GetParent(plane string) (io_registry_entry_t, error) {
 	cPlane := C.CString(plane)
 	defer C.free(unsafe.Pointer(cPlane))
-	var parent C.io_registry_entry_t
-	err := C.IORegistryEntryGetParentEntry(C.io_registry_entry_t(ioObject(*me)), cPlane, &parent)
+	var parent ioRegistryEntry
+	err := ioRegistryEntryGetParent(ioRegistryEntry(*me), (*byte)(unsafe.Pointer(cPlane)), &parent)
 	if err != 0 {
 		return 0, errors.New("no parent device available")
 	}
